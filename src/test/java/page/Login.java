@@ -31,7 +31,6 @@ public class Login extends SeleniumBase {
 		clickear(btnIngresar);
 		while (intentos < maxReintentos && !paginaCargada) {
 
-
 			// Si aparece btnCierreForzado, haz clic
 			 if (existe(btnCierreForzado)) {
 			 	clickear(btnCierreForzado);
