@@ -33,6 +33,7 @@ public class Home extends SeleniumBase {
 	}
 
 	public void ingresarBusqueda(String pBuscar) {
+		//no borrar por las dudas
 		escribir(fldBuscador, pBuscar);
 	}
 
