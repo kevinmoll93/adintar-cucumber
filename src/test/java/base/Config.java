@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class Config {
 	public static final int tiempoEspera = 3000; //milisegundos
 	public static final int tiempoEsperaImplicita = 10; //segundos
-	public static final String urlPrincipal = "https://ciudad.bee3.h.redlink.com.ar/ciudad/bee/auth/login";
+	public static final String urlPrincipal = "http://ciudadintranet/";
 
 	public static WebDriver getDriver(String navegador) {
 		WebDriver driver = null;
@@ -32,8 +32,7 @@ public class Config {
 	public static List<String> getEscenariosEnFeature(String featureFile) {
 		try {
 			Path path = Paths.get(featureFile);
-			return Files.lines(path)
-					.filter(line -> line.trim().startsWith("Scenario")) // Filtrar líneas con escenarios
+			return Files.lines(path).filter(line -> line.trim().startsWith("Scenario")) // Filtrar líneas con escenarios
 					.map(line -> line.replace("Scenario: ", "").trim()) // Extraer el nombre
 					.collect(Collectors.toList());
 		} catch (IOException e) {
