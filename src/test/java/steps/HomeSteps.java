@@ -9,11 +9,11 @@ public class HomeSteps {
 	WebDriver driver = Hooks.getDriver();
 	Home home = new Home(driver);
 
-	@Given("el usuario accede al aplicativo Adintar")
-	public void elUsuarioAccedeAlAplicativoAdintar() {
+	@Given("el usuario accede a la consulta de Cuentas")
+	public void elUsuarioAccedeALaConsultaDeCuentas() {
 		driver.get(Config.urlPrincipal);
-		home.clickMenuAplicativos();
-		home.clickTesting();
-		home.clickAdintar();
+		home.clickCuentas();
+		home.clickConsultas();
+		home.clickConsultaCuentas();
 	}
 }

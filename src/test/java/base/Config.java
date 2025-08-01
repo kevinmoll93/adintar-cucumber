@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class Config {
 	public static final int tiempoEspera = 3000; //milisegundos
 	public static final int tiempoEsperaImplicita = 10; //segundos
-	public static final String urlPrincipal = "http://ciudadintranet/";
+	public static final String urlPrincipal = "http://bclt2015/adintarweb2008/default.aspx";
 
 	public static WebDriver getDriver(String navegador) {
 		WebDriver driver = null;
