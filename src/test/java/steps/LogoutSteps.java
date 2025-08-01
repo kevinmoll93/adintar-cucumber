@@ -12,17 +12,18 @@ public class LogoutSteps {
 
 	@Given("el usuario espera unos momentos para cerrar sesion")
 	public void verificarBoton() {
-		logout.verificarSalir();
+		logout.verificarBotonSalir();
 	}
 
 
 	@When("realiza el cierre de sesion")
-	public void clickSalir() {
+	public void clickBotonSalir() {
+		logout.clickSalir();
 		logout.clickSalir();
 	}
 
-	@Then("deberia ver el login principal")
+	@Then("deberia ver el texto de cierre exitoso")
 	public void verificarTextoLogin() {
-		logout.verificarBotonLogin();
+		logout.verificarCierre();
 	}
 }

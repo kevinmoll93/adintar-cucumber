@@ -13,6 +13,11 @@ public class Home extends SeleniumBase {
 	private final By txtAdintar = By.xpath("//a[contains(text(),'Testing - Adintar Web 2008')]");
 	private final By lnkAdintar = By.xpath("//a[contains(text(),'Testing Adintar Web 2008')]");
 
+	private final By lnkCuentas = By.xpath("//a[@id='MenuIzquierdot0']");
+	private final By lnkConsultas = By.xpath("//a[@id='MenuIzquierdot1']");
+	private final By lnkConsultaCuentas = By.xpath("//a[@id='ListaProgt0']");
+
+
 	/**
 	 * Constructor que inicializa el driver de Selenium.
 	 *
@@ -40,5 +45,17 @@ public class Home extends SeleniumBase {
 	public void clickAdintar() {
 		clickear(txtAdintar);
 		clickear(lnkAdintar);
+	}
+
+	public void clickCuentas() {
+		clickear(lnkCuentas);
+	}
+
+	public void clickConsultas() {
+		clickear(lnkConsultas);
+	}
+
+	public void clickConsultaCuentas() {
+		clickear(lnkConsultaCuentas);
 	}
 }

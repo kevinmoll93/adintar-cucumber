@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -24,552 +25,544 @@ import java.util.List;
  */
 public class SeleniumBase {
 
-    protected static WebDriver driver;
-    private static final Logger logger = LoggerFactory.getLogger(SeleniumBase.class);
-    private static final int TIEMPO_ESPERA = 20; // Tiempo máximo de espera en segundos
-
-    WebDriverWait waitShort = new WebDriverWait(driver, Duration.ofSeconds(10));
-
-    /**
-     * Constructor que inicializa el driver de Selenium.
-     *
-     * @param driver instancia de WebDriver
-     */
-    public SeleniumBase(WebDriver driver) {
-        this.driver = driver;
-    }
-
-    /**
-     * Muestra una alerta de error y permite al usuario continuar o detener la ejecución.
-     *
-     * @param e excepción capturada
-     */
-    private void alertaError(Exception e) {
-        String errorMessage = e.getMessage().split("Build info")[0];
-        int option = JOptionPane.showConfirmDialog(
-                null,
-                errorMessage + "\n¿Desea continuar? Asegúrese de realizar la acción manualmente antes.",
-                "ERROR",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.ERROR_MESSAGE
-        );
-        if (option == JOptionPane.CANCEL_OPTION) {
-            logger.error("Error: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Espera explícitamente hasta que un elemento sea visible.
-     *
-     * @param localizador By del elemento a esperar
-     * @return WebElement encontrado
-     */
-    public WebElement esperarElemento(By localizador) {
-        logger.info("Esperando hasta que el elemento esté visible: {}", localizador);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(localizador));
-    }
-
-    protected WebElement esperarElementoClickeable(By localizador) {
-        logger.info("Esperando hasta que el elemento esté clickeable: {}", localizador);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
-        return wait.until(ExpectedConditions.elementToBeClickable(localizador));
-    }
-
-    public List<WebElement> esperarElementos(By localizador) {
-        logger.info("Esperando hasta que al menos un elemento esté visible: {}", localizador);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
-        return wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(localizador));
-    }
-
-    private void desplazarAlElemento(WebElement elemento) {
-        try {
-            logger.info("Intentando desplazar al elemento: {}", elemento);
-
-            // Verifica si el elemento está presente y habilitado antes de desplazarse
-            if (elemento.isDisplayed()) {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", elemento);
-                logger.info("Desplazamiento al elemento completado.");
-            } else {
-                logger.warn("El elemento no está visible, no se puede desplazar hasta él.");
-            }
-        } catch (Exception e) {
-            logger.error("Error al intentar desplazar al elemento: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    protected void desplazarHastaHacerVisible(By locator) {
-        try {
-            logger.info("Intentando desplazar dinámicamente hasta que el elemento sea visible: {}", locator);
-
-            // Máximo número de intentos de desplazamiento
-            int maxScrollAttempts = 10;
-            int attempt = 0;
-
-            while (attempt < maxScrollAttempts) {
-                try {
-                    // Intenta encontrar el elemento visible
-                    WebElement elemento = driver.findElement(locator);
-                    if (elemento.isDisplayed()) {
-                        logger.info("El elemento ya es visible en el DOM.");
-                        return; // Sal del método si el elemento ya es visible
-                    }
-                } catch (Exception e) {
-                    // Ignora la excepción ya que puede no estar en el DOM aún
-                }
-
-                // Desplázate hacia abajo un poco
-                ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
-                Thread.sleep(500); // Breve pausa para cargar el contenido dinámico
-
-                attempt++;
-            }
-
-            throw new RuntimeException("El elemento no se hizo visible después de " + maxScrollAttempts + " intentos de desplazamiento.");
-        } catch (Exception e) {
-            logger.error("Error durante el desplazamiento dinámico: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Realiza un desplazamiento hacia arriba o abajo.
-     *
-     * @param locator del elemento a buscar
-     */
-    protected void desplazarHastaHacerVisibleBidireccional(By locator) {
-        try {
-            logger.info("Desplazándose dinámicamente en ambas direcciones hasta que el elemento sea visible: {}", locator);
-
-            int maxScrollAttempts = 20;
-            int attempt = 0;
-            int scrollStep = 300;
-
-            while (attempt < maxScrollAttempts) {
-                try {
-                    WebElement elemento = driver.findElement(locator);
-                    if (elemento.isDisplayed()) {
-                        logger.info("Elemento visible después de {} intentos.", attempt);
-                        return;
-                    }
-                } catch (Exception e) {
-                    // Ignorar la excepción
-                }
-
-                // Alternar entre desplazamiento hacia abajo y hacia arriba
-                int direction = (attempt % 2 == 0) ? scrollStep : -scrollStep;
-                ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, arguments[0]);", direction);
-
-                Thread.sleep(500); // Pausa para contenido dinámico
-                attempt++;
-            }
-
-            throw new RuntimeException("El elemento no se hizo visible tras el desplazamiento bidireccional.");
-        } catch (Exception e) {
-            logger.error("Error al desplazar dinámicamente: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Navega a la URL especificada.
-     *
-     * @param URL dirección web a visitar
-     */
-    protected void irUrl(String URL) {
-        logger.info("Navegando a la URL: {}", URL);
-        driver.get(URL);
-    }
-
-    /**
-     * Encuentra un elemento en la página web.
-     *
-     * @param localizador By para identificar el elemento
-     * @return WebElement encontrado
-     */
-    public WebElement encontrarElemento(By localizador) {
-        logger.debug("Buscando elemento con localizador: {}", localizador);
-        return driver.findElement(localizador);
-    }
-
-    /**
-     * Encuentra múltiples elementos en la página web.
-     *
-     * @param localizador By para identificar los elementos
-     * @return Lista de WebElements encontrados
-     */
-    public List<WebElement> encontrarElementos(By localizador) {
-        logger.debug("Buscando elementos con localizador: {}", localizador);
-        return driver.findElements(localizador);
-    }
-
-
-    /**
-     * Hace clic en un elemento identificado por un localizador, esperando que sea clickeable.
-     *
-     * @param localizador By para identificar el elemento
-     */
-    protected void clickear(By localizador) {
-        try {
-            logger.info("Haciendo clic en el elemento: {}", localizador);
-            WebElement elemento = esperarElementoClickeable(localizador);
-            //desplazarAlElemento(elemento);
-            elemento.click();
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    protected void clickConJavaScript(By localizador) {
-        WebElement elemento = encontrarElemento(localizador);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", elemento);
-    }
-
-    protected void clickWebElement(WebElement elemento){
-        elemento.click();
-    }
-
-    public void clickearPrimeraOcurrencia(By xpathDinamico) {
-        try {
-            // Obtén todas las ocurrencias del XPath
-            List<WebElement> elementos = driver.findElements(xpathDinamico);
-
-            // Valida si existen ocurrencias
-            if (elementos.size() > 0) {
-                // Haz clic en la primera ocurrencia
-                elementos.get(0).click();
-                logger.info("Se hizo clic en la primera ocurrencia del elemento.");
-            } else {
-                logger.warn("No se encontraron elementos que coincidan con el XPath proporcionado.");
-            }
-        } catch (Exception e) {
-            logger.error("Error al intentar hacer clic en la primera ocurrencia: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Realiza clic en un elemento SVG utilizando JavaScript Executor.
-     *
-     * @param xpathSvg XPath para localizar el elemento SVG
-     */
-    protected void esperarYClickSvg(String xpathSvg, String claseEsperada, int maxIntentos) {
-        boolean estadoCambiado = false;
-        int intentos = 0;
-
-        while (!estadoCambiado && intentos < maxIntentos) {
-            try {
-                // Buscar el elemento SVG
-                WebElement svgElement = driver.findElement(By.xpath(xpathSvg));
-
-                // Esperar a que sea visible e interactuable
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
-                wait.until(ExpectedConditions.elementToBeClickable(svgElement));
-
-                // Intentar hacer clic con Actions para mayor precisión
-                Actions actions = new Actions(driver);
-                actions.moveToElement(svgElement).click().perform();
-
-                // Verificar si el estado cambió (por ejemplo, clase o propiedad CSS)
-                String claseActual = svgElement.getAttribute("class");
-                if (claseEsperada == null || claseActual.contains(claseEsperada)) {
-                    estadoCambiado = true;
-                } else {
-                    System.out.println("Estado no cambió: clase actual = " + claseActual);
-                }
-
-            } catch (Exception e) {
-                System.out.println("Intento " + (intentos + 1) + ": Error al hacer clic - " + e.getMessage());
-            }
-            intentos++;
-        }
-
-        if (!estadoCambiado) {
-            throw new RuntimeException("El estado del elemento SVG no cambió después de " + maxIntentos + " intentos.");
-        }
-    }
-
-    /**
-     * Intenta hacer clic en un elemento si existe.
-     *
-     * @param localizador Localizador del elemento.
-     * @return true si se logró hacer clic, false si no.
-     */
-    protected boolean intentarClick(By localizador) {
-        if (existeClickeable(localizador)) {
-            clickear(localizador);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Reintenta hacer clic en un elemento varias veces antes de fallar.
-     *
-     * @param localizador   Localizador del elemento.
-     * @param maxReintentos Número máximo de reintentos.
-     */
-    protected void reintentarClick(By localizador, int maxReintentos) {
-        int intentos = 0;
-        while (intentos < maxReintentos) {
-            try {
-                // Esperar que el elemento sea clickeable
-                WebElement elemento = esperarElementoClickeable(localizador);
-
-                // Desplazar hacia el elemento (si está fuera del viewport)
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", elemento);
-
-                // Intentar clic normal
-                elemento.click();
-                logger.info("Clic realizado exitosamente en: {}", localizador);
-                return; // Salir del bucle si el clic es exitoso
-            } catch (Exception e) {
-                intentos++;
-                logger.warn("Intento {} de {} fallido para hacer clic en: {}", intentos, maxReintentos, localizador, e);
-                try {
-                    Thread.sleep(500); // Esperar un breve momento antes de reintentar
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }
-        throw new RuntimeException("No se pudo hacer clic en el elemento después de " + maxReintentos + " intentos: " + localizador);
-    }
-
-    /**
-     * Hace click a un boton que le podemos pasar un parametro
-     *
-     * @param value   valor del parametro
-     * @param xpathConFormato xpath
-     */
-    protected void clickPorValue(String xpathConFormato, String value) {
-        try {
-            String xpathFinal = String.format(xpathConFormato, value);
-            By localizador = By.xpath(xpathFinal);
-            logger.info("Click en el botón con texto '{}': {}", value, xpathFinal);
-
-            WebElement clickElement = esperarElementoClickeable(localizador);
-            scrollHastaElemento(clickElement);
-            clickElement.click();
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Escribe texto en un campo de entrada, esperando que esté visible.
-     *
-     * @param localizador By para identificar el campo
-     * @param texto       texto a ingresar
-     */
-    protected void escribir(By localizador, String texto) {
-        try {
-            logger.info("Escribiendo texto '{}' en el elemento: {}", texto, localizador);
-            WebElement elemento = esperarElemento(localizador);
-
-            // Usa JavaScript si sendKeys no funciona
-            try {
-                elemento.clear();
-                elemento.sendKeys(texto);
-            } catch (Exception e) {
-                logger.warn("sendKeys falló, intentando con JavaScript.");
-                ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", elemento, texto);
-            }
-
-            logger.info("Texto '{}' escrito correctamente en el elemento.", texto);
-        } catch (Exception e) {
-            logger.error("Error al escribir texto en el elemento: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    protected void escribirWebElement(WebElement elemento, String texto){
-        try {
-
-            // Usa JavaScript si sendKeys no funciona
-            try {
-                elemento.clear();
-                elemento.sendKeys(texto);
-            } catch (Exception e) {
-                logger.warn("sendKeys fallo, intentando con JavaScript.");
-                ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", elemento, texto);
-            }
-
-            logger.info("Texto '{}' escrito correctamente en  elemento.", texto);
-        } catch (Exception e) {
-            logger.error("Error escribir texto en el elemento: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
-
-
-    /**
-     * Limpia el contenido de un campo de texto, esperando que esté visible.
-     *
-     * @param localizador By para identificar el campo
-     */
-    protected void limpiar(By localizador) {
-        try {
-            logger.info("Limpiando contenido del elemento: {}", localizador);
-            WebElement elemento = esperarElemento(localizador);
-            elemento.clear();
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Selecciona una opción en un desplegable por el texto visible, esperando que esté presente.
-     *
-     * @param localizador By para identificar el desplegable
-     * @param texto       texto visible de la opción
-     */
-    protected void seleccionarOpcionPorTexto(By localizador, String texto) {
-        try {
-            logger.info("Seleccionando opción '{}' en el elemento: {}", texto, localizador);
-            WebElement selectElement = esperarElemento(localizador);
-            Select select = new Select(selectElement);
-            select.selectByVisibleText(texto);
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Selecciona una opción en un desplegable por el valor en el HTML, esperando que esté presente.
-     *
-     * @param localizador By para identificar el desplegable
-     * @param value       valor del atributo 'value' en el HTML
-     */
-    protected void seleccionarOpcionPorValue(By localizador, String value) {
-        try {
-            logger.info("Seleccionando opción por value '{}' en el elemento: {}", value, localizador);
-            WebElement selectElement = esperarElemento(localizador);
-            Select select = new Select(selectElement);
-            select.selectByValue(value);
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Selecciona una opción en un desplegable utilizando un texto dinámico y seleccionando la primera coincidencia.
-     *
-     * @param texto texto dinámico que se buscará en las opciones
-     */
-    protected void seleccionarOpcionConTexto(String xpathTemplate, String texto) {
-        try {
-            // Construye el XPath dinámico con el texto parametrizado
-            String xpath = String.format(xpathTemplate, texto.trim());
-
-            logger.info("Buscando la opción con XPath: {}", xpath);
-
-            // Espera que el elemento esté visible
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-            WebElement opcion = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
-
-            // Haz clic en la opción encontrada
-            logger.info("Seleccionando la opción: {}", opcion.getText().trim());
-            opcion.click();
-        } catch (Exception e) {
-            logger.error("Error al seleccionar la opción con XPath '{}' y texto '{}': {}", xpathTemplate, texto, e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    protected void seleccionarOpcionConTextoCompleto(String texto, String xpath) {
-        try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-
-            // Esperar que al menos una opción esté presente y visible
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
-
-            int intentos = 3; // Reintentar hasta 3 veces si el elemento se vuelve obsoleto
-
-            while (intentos > 0) {
-                try {
-                    // Obtener todas las opciones disponibles
-                    List<WebElement> opciones = driver.findElements(By.xpath(xpath));
-
-                    for (int i = 0; i < opciones.size(); i++) {
-                        WebElement opcion = opciones.get(i);
-
-                        // Extraer los textos de todos los <b> dentro de la opción
-                        List<WebElement> partes = opcion.findElements(By.xpath(".//b"));
-                        String textoCompleto = partes.stream()
-                                .map(WebElement::getText)
-                                .reduce("", (a, b) -> a + " " + b).trim();
-
-                        logger.info("Texto combinado de la opción: '{}'", textoCompleto);
-
-                        // Verificar si el texto combinado contiene el texto buscado
-                        if (textoCompleto.equalsIgnoreCase(texto) || textoCompleto.contains(texto)) {
-                            logger.info("Opción encontrada: '{}'. Intentando hacer clic...", textoCompleto);
-
-                            // Esperar que la opción sea clickeable antes de hacer clic
-                            WebElement opcionActualizada = wait.until(ExpectedConditions.elementToBeClickable(opcion));
-                            opcionActualizada.click();
-
-                            logger.info("Opción seleccionada correctamente: '{}'", textoCompleto);
-                            return;
-                        }
-                    }
-
-                    logger.warn("No se encontró la opción con texto parcial: {}", texto);
-                    return;
-                } catch (StaleElementReferenceException e) {
-                    logger.warn("Elemento quedó obsoleto, reintentando...");
-                    intentos--;
-                }
-            }
-
-            logger.error("No se pudo seleccionar la opción después de varios intentos.");
-        } catch (Exception e) {
-            logger.error("Error al seleccionar la opción con texto '{}': {}", texto, e.getMessage());
-            alertaError(e);
-        }
-    }
-
-    protected void seleccionarPorWebElement(WebElement elemento, String texto){
-        try {
-            logger.info("Seleccionando opcion '{}' en el elemento: {}", texto, elemento);
-            Select select = new Select(elemento);
-            select.selectByVisibleText(texto);
-        } catch (Exception e) {
-            alertaError(e);
-        }
-    }
-
-    /**
-     * Verifica si un elemento existe y está visible en la página.
-     *
-     * @param localizador By para identificar el elemento
-     * @return true si existe, false si no
-     */
-    protected boolean existe(By localizador) {
-        try {
-            return !driver.findElements(localizador).isEmpty();
-        } catch (Exception e) {
-            System.out.println("Error al buscar elemento: " + localizador);
-            return false;
-        }
-    }
-
-    protected boolean existeDirecto(By elemento) {
-        return !driver.findElements(elemento).isEmpty();
-    }
-
-    protected boolean existeClickeable(By localizador) {
-        try {
-            esperarElementoClickeable(localizador);
-            return true;
-        } catch (TimeoutException e) {
-            logger.warn("El elemento no existe o no es visible: {}", localizador);
-            return false;
-        }
-    }
+	protected static WebDriver driver;
+	private static final Logger logger = LoggerFactory.getLogger(SeleniumBase.class);
+	private static final int TIEMPO_ESPERA = 20; // Tiempo máximo de espera en segundos
+
+	WebDriverWait waitShort = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+	/**
+	 * Constructor que inicializa el driver de Selenium.
+	 *
+	 * @param driver instancia de WebDriver
+	 */
+	public SeleniumBase(WebDriver driver) {
+		this.driver = driver;
+	}
+
+	/**
+	 * Muestra una alerta de error y permite al usuario continuar o detener la ejecución.
+	 *
+	 * @param e excepción capturada
+	 */
+	private void alertaError(Exception e) {
+		String errorMessage = e.getMessage().split("Build info")[0];
+		int option = JOptionPane.showConfirmDialog(null, errorMessage + "\n¿Desea continuar? Asegúrese de realizar la acción manualmente antes.", "ERROR", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
+		if (option == JOptionPane.CANCEL_OPTION) {
+			logger.error("Error: {}", e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Espera explícitamente hasta que un elemento sea visible.
+	 *
+	 * @param localizador By del elemento a esperar
+	 * @return WebElement encontrado
+	 */
+	public WebElement esperarElemento(By localizador) {
+		logger.info("Esperando hasta que el elemento esté visible: {}", localizador);
+		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
+		return wait.until(ExpectedConditions.visibilityOfElementLocated(localizador));
+	}
+
+	protected WebElement esperarElementoClickeable(By localizador) {
+		logger.info("Esperando hasta que el elemento esté clickeable: {}", localizador);
+		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
+		return wait.until(ExpectedConditions.elementToBeClickable(localizador));
+	}
+
+	public List<WebElement> esperarElementos(By localizador) {
+		logger.info("Esperando hasta que al menos un elemento esté visible: {}", localizador);
+		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
+		return wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(localizador));
+	}
+
+	private void desplazarAlElemento(WebElement elemento) {
+		try {
+			logger.info("Intentando desplazar al elemento: {}", elemento);
+
+			// Verifica si el elemento está presente y habilitado antes de desplazarse
+			if (elemento.isDisplayed()) {
+				((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", elemento);
+				logger.info("Desplazamiento al elemento completado.");
+			} else {
+				logger.warn("El elemento no está visible, no se puede desplazar hasta él.");
+			}
+		} catch (Exception e) {
+			logger.error("Error al intentar desplazar al elemento: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void desplazarHastaHacerVisible(By locator) {
+		try {
+			logger.info("Intentando desplazar dinámicamente hasta que el elemento sea visible: {}", locator);
+
+			// Máximo número de intentos de desplazamiento
+			int maxScrollAttempts = 10;
+			int attempt = 0;
+
+			while (attempt < maxScrollAttempts) {
+				try {
+					// Intenta encontrar el elemento visible
+					WebElement elemento = driver.findElement(locator);
+					if (elemento.isDisplayed()) {
+						logger.info("El elemento ya es visible en el DOM.");
+						return; // Sal del método si el elemento ya es visible
+					}
+				} catch (Exception e) {
+					// Ignora la excepción ya que puede no estar en el DOM aún
+				}
+
+				// Desplázate hacia abajo un poco
+				((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
+				Thread.sleep(500); // Breve pausa para cargar el contenido dinámico
+
+				attempt++;
+			}
+
+			throw new RuntimeException("El elemento no se hizo visible después de " + maxScrollAttempts + " intentos de desplazamiento.");
+		} catch (Exception e) {
+			logger.error("Error durante el desplazamiento dinámico: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Realiza un desplazamiento hacia arriba o abajo.
+	 *
+	 * @param locator del elemento a buscar
+	 */
+	protected void desplazarHastaHacerVisibleBidireccional(By locator) {
+		try {
+			logger.info("Desplazándose dinámicamente en ambas direcciones hasta que el elemento sea visible: {}", locator);
+
+			int maxScrollAttempts = 20;
+			int attempt = 0;
+			int scrollStep = 300;
+
+			while (attempt < maxScrollAttempts) {
+				try {
+					WebElement elemento = driver.findElement(locator);
+					if (elemento.isDisplayed()) {
+						logger.info("Elemento visible después de {} intentos.", attempt);
+						return;
+					}
+				} catch (Exception e) {
+					// Ignorar la excepción
+				}
+
+				// Alternar entre desplazamiento hacia abajo y hacia arriba
+				int direction = (attempt % 2 == 0) ? scrollStep : -scrollStep;
+				((JavascriptExecutor) driver).executeScript("window.scrollBy(0, arguments[0]);", direction);
+
+				Thread.sleep(500); // Pausa para contenido dinámico
+				attempt++;
+			}
+
+			throw new RuntimeException("El elemento no se hizo visible tras el desplazamiento bidireccional.");
+		} catch (Exception e) {
+			logger.error("Error al desplazar dinámicamente: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Navega a la URL especificada.
+	 *
+	 * @param URL dirección web a visitar
+	 */
+	protected void irUrl(String URL) {
+		logger.info("Navegando a la URL: {}", URL);
+		driver.get(URL);
+	}
+
+	/**
+	 * Encuentra un elemento en la página web.
+	 *
+	 * @param localizador By para identificar el elemento
+	 * @return WebElement encontrado
+	 */
+	public WebElement encontrarElemento(By localizador) {
+		logger.debug("Buscando elemento con localizador: {}", localizador);
+		return driver.findElement(localizador);
+	}
+
+	/**
+	 * Encuentra múltiples elementos en la página web.
+	 *
+	 * @param localizador By para identificar los elementos
+	 * @return Lista de WebElements encontrados
+	 */
+	public List<WebElement> encontrarElementos(By localizador) {
+		logger.debug("Buscando elementos con localizador: {}", localizador);
+		return driver.findElements(localizador);
+	}
+
+
+	/**
+	 * Hace clic en un elemento identificado por un localizador, esperando que sea clickeable.
+	 *
+	 * @param localizador By para identificar el elemento
+	 */
+	protected void clickear(By localizador) {
+		try {
+			logger.info("Haciendo clic en el elemento: {}", localizador);
+			WebElement elemento = esperarElementoClickeable(localizador);
+			//desplazarAlElemento(elemento);
+			elemento.click();
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	protected void clickConJavaScript(By localizador) {
+		WebElement elemento = encontrarElemento(localizador);
+		((JavascriptExecutor) driver).executeScript("arguments[0].click();", elemento);
+	}
+
+	protected void clickWebElement(WebElement elemento) {
+		elemento.click();
+	}
+
+	public void clickearPrimeraOcurrencia(By xpathDinamico) {
+		try {
+			// Obtén todas las ocurrencias del XPath
+			List<WebElement> elementos = driver.findElements(xpathDinamico);
+
+			// Valida si existen ocurrencias
+			if (elementos.size() > 0) {
+				// Haz clic en la primera ocurrencia
+				elementos.get(0).click();
+				logger.info("Se hizo clic en la primera ocurrencia del elemento.");
+			} else {
+				logger.warn("No se encontraron elementos que coincidan con el XPath proporcionado.");
+			}
+		} catch (Exception e) {
+			logger.error("Error al intentar hacer clic en la primera ocurrencia: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Realiza clic en un elemento SVG utilizando JavaScript Executor.
+	 *
+	 * @param xpathSvg XPath para localizar el elemento SVG
+	 */
+	protected void esperarYClickSvg(String xpathSvg, String claseEsperada, int maxIntentos) {
+		boolean estadoCambiado = false;
+		int intentos = 0;
+
+		while (!estadoCambiado && intentos < maxIntentos) {
+			try {
+				// Buscar el elemento SVG
+				WebElement svgElement = driver.findElement(By.xpath(xpathSvg));
+
+				// Esperar a que sea visible e interactuable
+				WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
+				wait.until(ExpectedConditions.elementToBeClickable(svgElement));
+
+				// Intentar hacer clic con Actions para mayor precisión
+				Actions actions = new Actions(driver);
+				actions.moveToElement(svgElement).click().perform();
+
+				// Verificar si el estado cambió (por ejemplo, clase o propiedad CSS)
+				String claseActual = svgElement.getAttribute("class");
+				if (claseEsperada == null || claseActual.contains(claseEsperada)) {
+					estadoCambiado = true;
+				} else {
+					System.out.println("Estado no cambió: clase actual = " + claseActual);
+				}
+
+			} catch (Exception e) {
+				System.out.println("Intento " + (intentos + 1) + ": Error al hacer clic - " + e.getMessage());
+			}
+			intentos++;
+		}
+
+		if (!estadoCambiado) {
+			throw new RuntimeException("El estado del elemento SVG no cambió después de " + maxIntentos + " intentos.");
+		}
+	}
+
+	/**
+	 * Intenta hacer clic en un elemento si existe.
+	 *
+	 * @param localizador Localizador del elemento.
+	 * @return true si se logró hacer clic, false si no.
+	 */
+	protected boolean intentarClick(By localizador) {
+		if (existeClickeable(localizador)) {
+			clickear(localizador);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Reintenta hacer clic en un elemento varias veces antes de fallar.
+	 *
+	 * @param localizador   Localizador del elemento.
+	 * @param maxReintentos Número máximo de reintentos.
+	 */
+	protected void reintentarClick(By localizador, int maxReintentos) {
+		int intentos = 0;
+		while (intentos < maxReintentos) {
+			try {
+				// Esperar que el elemento sea clickeable
+				WebElement elemento = esperarElementoClickeable(localizador);
+
+				// Desplazar hacia el elemento (si está fuera del viewport)
+				((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", elemento);
+
+				// Intentar clic normal
+				elemento.click();
+				logger.info("Clic realizado exitosamente en: {}", localizador);
+				return; // Salir del bucle si el clic es exitoso
+			} catch (Exception e) {
+				intentos++;
+				logger.warn("Intento {} de {} fallido para hacer clic en: {}", intentos, maxReintentos, localizador, e);
+				try {
+					Thread.sleep(500); // Esperar un breve momento antes de reintentar
+				} catch (InterruptedException ignored) {
+				}
+			}
+		}
+		throw new RuntimeException("No se pudo hacer clic en el elemento después de " + maxReintentos + " intentos: " + localizador);
+	}
+
+	/**
+	 * Hace click a un boton que le podemos pasar un parametro
+	 *
+	 * @param value           valor del parametro
+	 * @param xpathConFormato xpath
+	 */
+	protected void clickPorValue(String xpathConFormato, String value) {
+		try {
+			String xpathFinal = String.format(xpathConFormato, value);
+			By localizador = By.xpath(xpathFinal);
+			logger.info("Click en el botón con texto '{}': {}", value, xpathFinal);
+
+			WebElement clickElement = esperarElementoClickeable(localizador);
+			scrollHastaElemento(clickElement);
+			clickElement.click();
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Escribe texto en un campo de entrada, esperando que esté visible.
+	 *
+	 * @param localizador By para identificar el campo
+	 * @param texto       texto a ingresar
+	 */
+	protected void escribir(By localizador, String texto) {
+		try {
+			logger.info("Escribiendo texto '{}' en el elemento: {}", texto, localizador);
+			WebElement elemento = esperarElemento(localizador);
+
+			// Usa JavaScript si sendKeys no funciona
+			try {
+				elemento.clear();
+				elemento.sendKeys(texto);
+			} catch (Exception e) {
+				logger.warn("sendKeys falló, intentando con JavaScript.");
+				((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", elemento, texto);
+			}
+
+			logger.info("Texto '{}' escrito correctamente en el elemento.", texto);
+		} catch (Exception e) {
+			logger.error("Error al escribir texto en el elemento: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void escribirWebElement(WebElement elemento, String texto) {
+		try {
+
+			// Usa JavaScript si sendKeys no funciona
+			try {
+				elemento.clear();
+				elemento.sendKeys(texto);
+			} catch (Exception e) {
+				logger.warn("sendKeys fallo, intentando con JavaScript.");
+				((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", elemento, texto);
+			}
+
+			logger.info("Texto '{}' escrito correctamente en  elemento.", texto);
+		} catch (Exception e) {
+			logger.error("Error escribir texto en el elemento: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+
+	/**
+	 * Limpia el contenido de un campo de texto, esperando que esté visible.
+	 *
+	 * @param localizador By para identificar el campo
+	 */
+	protected void limpiar(By localizador) {
+		try {
+			logger.info("Limpiando contenido del elemento: {}", localizador);
+			WebElement elemento = esperarElemento(localizador);
+			elemento.clear();
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Selecciona una opción en un desplegable por el texto visible, esperando que esté presente.
+	 *
+	 * @param localizador By para identificar el desplegable
+	 * @param texto       texto visible de la opción
+	 */
+	protected void seleccionarOpcionPorTexto(By localizador, String texto) {
+		try {
+			logger.info("Seleccionando opción '{}' en el elemento: {}", texto, localizador);
+			WebElement selectElement = esperarElemento(localizador);
+			Select select = new Select(selectElement);
+			select.selectByVisibleText(texto);
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Selecciona una opción en un desplegable por el valor en el HTML, esperando que esté presente.
+	 *
+	 * @param localizador By para identificar el desplegable
+	 * @param value       valor del atributo 'value' en el HTML
+	 */
+	protected void seleccionarOpcionPorValue(By localizador, String value) {
+		try {
+			logger.info("Seleccionando opción por value '{}' en el elemento: {}", value, localizador);
+			WebElement selectElement = esperarElemento(localizador);
+			Select select = new Select(selectElement);
+			select.selectByValue(value);
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Selecciona una opción en un desplegable utilizando un texto dinámico y seleccionando la primera coincidencia.
+	 *
+	 * @param texto texto dinámico que se buscará en las opciones
+	 */
+	protected void seleccionarOpcionConTexto(String xpathTemplate, String texto) {
+		try {
+			// Construye el XPath dinámico con el texto parametrizado
+			String xpath = String.format(xpathTemplate, texto.trim());
+
+			logger.info("Buscando la opción con XPath: {}", xpath);
+
+			// Espera que el elemento esté visible
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+			WebElement opcion = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+
+			// Haz clic en la opción encontrada
+			logger.info("Seleccionando la opción: {}", opcion.getText().trim());
+			opcion.click();
+		} catch (Exception e) {
+			logger.error("Error al seleccionar la opción con XPath '{}' y texto '{}': {}", xpathTemplate, texto, e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void seleccionarOpcionConTextoCompleto(String texto, String xpath) {
+		try {
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+			// Esperar que al menos una opción esté presente y visible
+			wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
+			wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+
+			int intentos = 3; // Reintentar hasta 3 veces si el elemento se vuelve obsoleto
+
+			while (intentos > 0) {
+				try {
+					// Obtener todas las opciones disponibles
+					List<WebElement> opciones = driver.findElements(By.xpath(xpath));
+
+					for (int i = 0; i < opciones.size(); i++) {
+						WebElement opcion = opciones.get(i);
+
+						// Extraer los textos de todos los <b> dentro de la opción
+						List<WebElement> partes = opcion.findElements(By.xpath(".//b"));
+						String textoCompleto = partes.stream().map(WebElement::getText).reduce("", (a, b) -> a + " " + b).trim();
+
+						logger.info("Texto combinado de la opción: '{}'", textoCompleto);
+
+						// Verificar si el texto combinado contiene el texto buscado
+						if (textoCompleto.equalsIgnoreCase(texto) || textoCompleto.contains(texto)) {
+							logger.info("Opción encontrada: '{}'. Intentando hacer clic...", textoCompleto);
+
+							// Esperar que la opción sea clickeable antes de hacer clic
+							WebElement opcionActualizada = wait.until(ExpectedConditions.elementToBeClickable(opcion));
+							opcionActualizada.click();
+
+							logger.info("Opción seleccionada correctamente: '{}'", textoCompleto);
+							return;
+						}
+					}
+
+					logger.warn("No se encontró la opción con texto parcial: {}", texto);
+					return;
+				} catch (StaleElementReferenceException e) {
+					logger.warn("Elemento quedó obsoleto, reintentando...");
+					intentos--;
+				}
+			}
+
+			logger.error("No se pudo seleccionar la opción después de varios intentos.");
+		} catch (Exception e) {
+			logger.error("Error al seleccionar la opción con texto '{}': {}", texto, e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void seleccionarPorWebElement(WebElement elemento, String texto) {
+		try {
+			logger.info("Seleccionando opcion '{}' en el elemento: {}", texto, elemento);
+			Select select = new Select(elemento);
+			select.selectByVisibleText(texto);
+		} catch (Exception e) {
+			alertaError(e);
+		}
+	}
+
+	/**
+	 * Verifica si un elemento existe y está visible en la página.
+	 *
+	 * @param localizador By para identificar el elemento
+	 * @return true si existe, false si no
+	 */
+	protected boolean existe(By localizador) {
+		try {
+			return !driver.findElements(localizador).isEmpty();
+		} catch (Exception e) {
+			System.out.println("Error al buscar elemento: " + localizador);
+			return false;
+		}
+	}
+
+	protected boolean existeDirecto(By elemento) {
+		return !driver.findElements(elemento).isEmpty();
+	}
+
+	protected boolean existeClickeable(By localizador) {
+		try {
+			esperarElementoClickeable(localizador);
+			return true;
+		} catch (TimeoutException e) {
+			logger.warn("El elemento no existe o no es visible: {}", localizador);
+			return false;
+		}
+	}
 
 	/**
 	 * Verifica si un elemento existe y está visible en la página.
@@ -587,20 +580,19 @@ public class SeleniumBase {
 		}
 	}
 
-    /**
-     * Verifica si el elemento esta habilitado y está visible en la página.
-     *
-     * @param locator para identificar el elemento directo.
-     *
-     */
-    protected boolean elementoHabilitado(By locator) {
-        try {
-            WebElement elemento = driver.findElement(locator);
-            return elemento.isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
+	/**
+	 * Verifica si el elemento esta habilitado y está visible en la página.
+	 *
+	 * @param locator para identificar el elemento directo.
+	 */
+	protected boolean elementoHabilitado(By locator) {
+		try {
+			WebElement elemento = driver.findElement(locator);
+			return elemento.isDisplayed();
+		} catch (NoSuchElementException e) {
+			return false;
+		}
+	}
 
 	/**
 	 * Realiza un manejo de errores y detiene la ejecucion.
@@ -611,280 +603,296 @@ public class SeleniumBase {
 		try {
 			// Lanza el error al log/reporte
 
-            // Cierra el navegador actual
-            if (driver != null) {
-                driver.quit();
-                System.out.println("Navegador cerrado debido al error: " + mensajeError);
-            }
-        } catch (Exception e) {
-            System.err.println("Error al cerrar el navegador: " + e.getMessage());
-        } finally {
-            // Lanza una excepción para detener la iteración actual
-            throw new RuntimeException(mensajeError);
-        }
-    }
+			// Cierra el navegador actual
+			if (driver != null) {
+				driver.quit();
+				System.out.println("Navegador cerrado debido al error: " + mensajeError);
+			}
+		} catch (Exception e) {
+			System.err.println("Error al cerrar el navegador: " + e.getMessage());
+		} finally {
+			// Lanza una excepción para detener la iteración actual
+			throw new RuntimeException(mensajeError);
+		}
+	}
 
-    protected void scrollHastaElFinal() {
-        try {
-            JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
-            logger.info("Desplazándose hasta el final del contenido.");
+	protected void scrollHastaElFinal() {
+		try {
+			JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
+			logger.info("Desplazándose hasta el final del contenido.");
 
-            jsExecutor.executeScript("window.scrollTo(0, document.body.scrollHeight);");
-            Thread.sleep(1000); // Pausa para permitir que se cargue el contenido dinámico
+			jsExecutor.executeScript("window.scrollTo(0, document.body.scrollHeight);");
+			Thread.sleep(1000); // Pausa para permitir que se cargue el contenido dinámico
 
-            logger.info("Desplazamiento hasta el final completado.");
-        } catch (Exception e) {
-            logger.error("Error al desplazarse hasta el final del contenido: {}", e.getMessage());
-            alertaError(e);
-        }
-    }
+			logger.info("Desplazamiento hasta el final completado.");
+		} catch (Exception e) {
+			logger.error("Error al desplazarse hasta el final del contenido: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
 
-    protected void scrollHastaElemento(WebElement elemento) {
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", elemento);
-    }
+	protected void scrollHastaElemento(WebElement elemento) {
+		((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", elemento);
+	}
 
-    /**
-     * Realiza un tab ya sea a un elemento o no.
-     *
-     * @param elemento indicamos el elemento al hacer tab.
-     */
-    protected void hacerTab(WebElement elemento) {
-        try {
-            if (elemento != null) {
-                logger.info("Haciendo 'Tab' en un elemento específico.");
-                elemento.sendKeys(Keys.TAB);
-            } else {
-                logger.info("Haciendo 'Tab' de manera global (sin un elemento específico).");
-                Actions actions = new Actions(driver);
-                actions.sendKeys(Keys.TAB).perform();
-            }
-            logger.info("Acción 'Tab' realizada con éxito.");
-        } catch (Exception e) {
-            logger.error("Error al realizar la acción 'Tab': {}", e.getMessage());
-            alertaError(e);
-        }
-    }
+	/**
+	 * Realiza un tab ya sea a un elemento o no.
+	 *
+	 * @param elemento indicamos el elemento al hacer tab.
+	 */
+	protected void hacerTab(WebElement elemento) {
+		try {
+			if (elemento != null) {
+				logger.info("Haciendo 'Tab' en un elemento específico.");
+				elemento.sendKeys(Keys.TAB);
+			} else {
+				logger.info("Haciendo 'Tab' de manera global (sin un elemento específico).");
+				Actions actions = new Actions(driver);
+				actions.sendKeys(Keys.TAB).perform();
+			}
+			logger.info("Acción 'Tab' realizada con éxito.");
+		} catch (Exception e) {
+			logger.error("Error al realizar la acción 'Tab': {}", e.getMessage());
+			alertaError(e);
+		}
+	}
 
+	private void esperar(int milisegundos) {
+		try {
+			Thread.sleep(milisegundos);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			System.out.println("Error durante la espera: " + e.getMessage());
+		}
+	}
 
+	/**
+	 * Realizar el cambio de foco a la nueva pestaña.
+	 */
+	protected void cambiarFocoNuevaPestania() {
+		// Guarda el identificador de la pestaña actual
+		String currentTab = driver.getWindowHandle();
 
+		// Espera hasta que haya más pestañas abiertas
+		esperar(1500);
 
-    private WebElement Find(String locator) {
-        WebElement element = null;
+		// Obtén todos los identificadores de las ventanas abiertas
+		Set<String> allTabs = driver.getWindowHandles();
 
-        try {
-            // Esperamos hasta que el elemento esté presente y visible
-            element = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(locator)));
-            if (element.isDisplayed() && element.isEnabled()) {
-                return element;
-            }
-        } catch (TimeoutException e) {
-            System.out.println("Tiempo de espera agotado: No se encontró el elemento.");
-        } catch (NoSuchElementException e) {
-            System.out.println("No se encontró el elemento: " + locator);
-        }
-
-        throw new RuntimeException("No se pudo encontrar el elemento: " + locator);
-    }
-
-    public void clickElement(String locator) {
-        Find(locator).click();
-    }
-
-    public void tryCloseModalsIfPresent(WebDriver driver) {
-        try {
-            // Buscar botón Aceptar
-            List<WebElement> aceptarBtns = driver.findElements(
-                    By.xpath("//button[contains(text(), 'Aceptar')]")
-            );
-
-            if (!aceptarBtns.isEmpty()) {
-                aceptarBtns.get(0).click();
-                System.out.println("Botón 'Aceptar' detectado y clickeado.");
-                return;
-            }
-
-            // Buscar botón Omitir
-            List<WebElement> omitirBtns = driver.findElements(
-                    By.xpath("//button[contains(text(), 'Omitir')]")
-            );
-
-            if (!omitirBtns.isEmpty()) {
-                omitirBtns.get(0).click();
-                System.out.println("Botón 'Omitir' detectado y clickeado.");
-                return;
-            }
-
-            // Podés seguir agregando más modales si necesitás
-        } catch (Exception e) {
-            System.out.println("No se detectó modal o ocurrió un error al cerrarlo: " + e.getMessage());
-        }
-    }
-
-    // selector de dropdown para el menu de bepe según el optionText pasado como
-    // parámetro
-    public void selectFromCustomDropdown(String dropdownLocator, String optionText) {
-        // Hacer clic en el dropdown para abrir las opciones
-        clickElement(dropdownLocator);
-
-        // Construir el XPath dinámicamente dependiendo de si el texto está en un <span>
-        // o <div>
-        String optionXpath = String.format("//mat-option[.//span[contains(text(), '%s')] or .//div[contains(text(), '%s')]]", optionText, optionText);
-
-        clickElement(optionXpath);
-    }
-
-    // algunos elementos web, no aparecen hasta que "hagas click" en otro elemento
-    // web en particular.
-    public void clickAndWrite(String locator1, String locator2, String textToWrite) {
-        clickElement(locator1);
-        Find(locator2).clear();
-        Find(locator2).sendKeys(textToWrite);
-    }
-
-    public void write(String locator, String textToWrite) {
-        Find(locator).clear();
-        Find(locator).sendKeys(textToWrite);
-    }
-
-    public String textFromElement(String locator) {
-        try {
-            return Find(locator).getText();
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener el texto del elemento: " + locator, e);
-        }
-    }
-
-    // scrollea 1 vez hacia abajo
-    public void scrollDownOnce() {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollBy(0, window.innerHeight);");
-    }
-
-    // scrollea x veces hacia abajo
-    public void scrollDown(int times) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        for (int i = 0; i < times; i++) {
-            js.executeScript("window.scrollBy(0, window.innerHeight);");
-        }
-    }
-
-    public void findRowAndClickRadio(String filaXpath){
-
-        // Encontrar la fila correspondiente
-        WebElement fila = driver.findElement(By.xpath(filaXpath));
-        // Buscar el checkbox dentro de esa fila
-        WebElement checkbox = fila.findElement(By.xpath(".//input[@type='radio']"));
-
-        // Hacer clic en el checkbox
-        checkbox.click();
-    }
-
-    public void findRowAndClickCheckbox(String filaXpath){
-        // Encontrar la fila correspondiente
-        WebElement fila = driver.findElement(By.xpath(filaXpath));
-        // Buscar el checkbox dentro de esa fila
-        WebElement checkbox = fila.findElement(By.xpath(".//input[@type='checkbox']"));
-
-        // Hacer clic en el checkbox
-        checkbox.click();
-    }
-
-    public String findRowAndReturnData(String filaXpath, String columnNumber) {
-        WebElement fila = driver.findElement(By.xpath(filaXpath));
-        // Obtener el mensaje de la x columna de la fila dada
-        WebElement text = fila.findElement(By.xpath("./td[" + columnNumber + "]"));
-        return text.getText();
-    }
-
-    // devuelve la posición de la fila de la tabla. Recordar que el theader cuenta como fila.
-    public String findPosRowInTable(String xpathTabla, String cbuBuscado){
-        try {
-            // Esperar a que la tabla esté presente y visible antes de ejecutar el código
-            WebElement tabla = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpathTabla)));
-            // Esperar a que todas las filas de la tabla sean cargadas (al menos una fila debe estar presente)
-            waitShort.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath(xpathTabla + "/tbody/tr")));
+		// Cambia el foco a la nueva pestaña
+		for (String tab : allTabs) {
+			if (!tab.equals(currentTab)) {
+				driver.switchTo().window(tab);
+				System.out.println("Foco cambiado a la nueva pestaña.");
+				break;
+			}
+		}
+	}
 
 
-            // Ejecutar JavaScript en el navegador para encontrar la fila del CBU
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            String fila = (String) js.executeScript(
-                    "function encontrarFilaCBU(xpathTabla, cbuBuscado) {" +
-                            "    let tabla = document.evaluate(xpathTabla, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;" +
-                            "    if (!tabla) return '-1';" +  // Si no se encuentra la tabla, devolver '-1'" +
-                            "    let filas = tabla.getElementsByTagName('tr');" +
-                            "    for (let i = 0; i < filas.length; i++) {" +
-                            "        if (filas[i].innerText.includes(cbuBuscado)) return (i + 1).toString();" + // Devolver el índice de la fila como string
-                            "    }" +
-                            "    return '-1';" + // Si no se encuentra el CBU, devolver '-1'
-                            "}" +
-                            "return encontrarFilaCBU(arguments[0], arguments[1]);",
-                    xpathTabla, cbuBuscado
-            );
+	private WebElement Find(String locator) {
+		WebElement element = null;
 
-            // Retornar el número de fila donde se encontró el CBU, o "-1" si no se encuentra
-            if (!fila.equals("-1")) {       // le resto 1 porque cuenta el theader como fila
-                int filaInt = Integer.parseInt(fila);  // Convertir el string a int
-                filaInt = filaInt - 1;  // Restar 1
-                fila = String.valueOf(filaInt);  // Convertir de nuevo a string
-            }
-            return fila;
+		try {
+			// Esperamos hasta que el elemento esté presente y visible
+			element = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(locator)));
+			if (element.isDisplayed() && element.isEnabled()) {
+				return element;
+			}
+		} catch (TimeoutException e) {
+			System.out.println("Tiempo de espera agotado: No se encontró el elemento.");
+		} catch (NoSuchElementException e) {
+			System.out.println("No se encontró el elemento: " + locator);
+		}
 
-        } catch (Exception e) {
-            // Manejo de excepciones si algo sale mal
-            e.printStackTrace();
-            return "-1";
-        }
-    }
+		throw new RuntimeException("No se pudo encontrar el elemento: " + locator);
+	}
 
-    public boolean isElementPresent(String xpath) {
-        try {
-            return driver.findElement(By.xpath(xpath)).isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
+	public void clickElement(String locator) {
+		Find(locator).click();
+	}
 
-    public boolean isOnDashboardPage() {
-        String currentUrl = driver.getCurrentUrl();
-        return currentUrl.contains("dashboard");
-    }
+	public void tryCloseModalsIfPresent(WebDriver driver) {
+		try {
+			// Buscar botón Aceptar
+			List<WebElement> aceptarBtns = driver.findElements(By.xpath("//button[contains(text(), 'Aceptar')]"));
 
-    public List listAccountNumber(){
-        List<String> listaCBUs = new ArrayList<>();
-        // Obtener todos los elementos que contienen el CBU
-        List<WebElement> elementosCBU = driver.findElements(By.xpath("//div[contains(text(), 'CBU')]"));
-        // Recorrer los elementos y extraer el texto
-        for (WebElement elemento : elementosCBU) {
-            String texto = elemento.getText();
-            // Extraer solo el número del CBU
-            String cbu = texto.replace("CBU ", "").trim();
-            listaCBUs.add(cbu);
-        }
-        return listaCBUs; // Retornar la lista de CBUs
-    }
+			if (!aceptarBtns.isEmpty()) {
+				aceptarBtns.get(0).click();
+				System.out.println("Botón 'Aceptar' detectado y clickeado.");
+				return;
+			}
 
-    public WebElement obtenerLista(String contenedorXpath){
-        // Esperar a que el contenedor esté visible
-        WebElement dropdown  = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(contenedorXpath)));
+			// Buscar botón Omitir
+			List<WebElement> omitirBtns = driver.findElements(By.xpath("//button[contains(text(), 'Omitir')]"));
 
-        // Busca dentro del dropdown la opción que contiene el texto deseado
-        return dropdown.findElement(By.xpath(contenedorXpath));
-    }
+			if (!omitirBtns.isEmpty()) {
+				omitirBtns.get(0).click();
+				System.out.println("Botón 'Omitir' detectado y clickeado.");
+				return;
+			}
 
-    public static int[] getCurrentDate() {
-        LocalDate today = LocalDate.now();
-        return new int[]{today.getDayOfMonth(), today.getMonthValue(), today.getYear()};
-    }
+			// Podés seguir agregando más modales si necesitás
+		} catch (Exception e) {
+			System.out.println("No se detectó modal o ocurrió un error al cerrarlo: " + e.getMessage());
+		}
+	}
 
-    public void waitSeconds(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("Wait was interrupted: " + e.getMessage());
-        }
-    }
+	// selector de dropdown para el menu de bepe según el optionText pasado como
+	// parámetro
+	public void selectFromCustomDropdown(String dropdownLocator, String optionText) {
+		// Hacer clic en el dropdown para abrir las opciones
+		clickElement(dropdownLocator);
 
+		// Construir el XPath dinámicamente dependiendo de si el texto está en un <span>
+		// o <div>
+		String optionXpath = String.format("//mat-option[.//span[contains(text(), '%s')] or .//div[contains(text(), '%s')]]", optionText, optionText);
+
+		clickElement(optionXpath);
+	}
+
+	// algunos elementos web, no aparecen hasta que "hagas click" en otro elemento
+	// web en particular.
+	public void clickAndWrite(String locator1, String locator2, String textToWrite) {
+		clickElement(locator1);
+		Find(locator2).clear();
+		Find(locator2).sendKeys(textToWrite);
+	}
+
+	public void write(String locator, String textToWrite) {
+		Find(locator).clear();
+		Find(locator).sendKeys(textToWrite);
+	}
+
+	public String textFromElement(String locator) {
+		try {
+			return Find(locator).getText();
+		} catch (Exception e) {
+			throw new RuntimeException("Error al obtener el texto del elemento: " + locator, e);
+		}
+	}
+
+	// scrollea 1 vez hacia abajo
+	public void scrollDownOnce() {
+		JavascriptExecutor js = (JavascriptExecutor) driver;
+		js.executeScript("window.scrollBy(0, window.innerHeight);");
+	}
+
+	// scrollea x veces hacia abajo
+	public void scrollDown(int times) {
+		JavascriptExecutor js = (JavascriptExecutor) driver;
+		for (int i = 0; i < times; i++) {
+			js.executeScript("window.scrollBy(0, window.innerHeight);");
+		}
+	}
+
+	public void findRowAndClickRadio(String filaXpath) {
+
+		// Encontrar la fila correspondiente
+		WebElement fila = driver.findElement(By.xpath(filaXpath));
+		// Buscar el checkbox dentro de esa fila
+		WebElement checkbox = fila.findElement(By.xpath(".//input[@type='radio']"));
+
+		// Hacer clic en el checkbox
+		checkbox.click();
+	}
+
+	public void findRowAndClickCheckbox(String filaXpath) {
+		// Encontrar la fila correspondiente
+		WebElement fila = driver.findElement(By.xpath(filaXpath));
+		// Buscar el checkbox dentro de esa fila
+		WebElement checkbox = fila.findElement(By.xpath(".//input[@type='checkbox']"));
+
+		// Hacer clic en el checkbox
+		checkbox.click();
+	}
+
+	public String findRowAndReturnData(String filaXpath, String columnNumber) {
+		WebElement fila = driver.findElement(By.xpath(filaXpath));
+		// Obtener el mensaje de la x columna de la fila dada
+		WebElement text = fila.findElement(By.xpath("./td[" + columnNumber + "]"));
+		return text.getText();
+	}
+
+	// devuelve la posición de la fila de la tabla. Recordar que el theader cuenta como fila.
+	public String findPosRowInTable(String xpathTabla, String cbuBuscado) {
+		try {
+			// Esperar a que la tabla esté presente y visible antes de ejecutar el código
+			WebElement tabla = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpathTabla)));
+			// Esperar a que todas las filas de la tabla sean cargadas (al menos una fila debe estar presente)
+			waitShort.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath(xpathTabla + "/tbody/tr")));
+
+
+			// Ejecutar JavaScript en el navegador para encontrar la fila del CBU
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+			String fila = (String) js.executeScript("function encontrarFilaCBU(xpathTabla, cbuBuscado) {" + "    let tabla = document.evaluate(xpathTabla, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;" + "    if (!tabla) return '-1';" +  // Si no se encuentra la tabla, devolver '-1'" +
+					"    let filas = tabla.getElementsByTagName('tr');" + "    for (let i = 0; i < filas.length; i++) {" + "        if (filas[i].innerText.includes(cbuBuscado)) return (i + 1).toString();" + // Devolver el índice de la fila como string
+					"    }" + "    return '-1';" + // Si no se encuentra el CBU, devolver '-1'
+					"}" + "return encontrarFilaCBU(arguments[0], arguments[1]);", xpathTabla, cbuBuscado);
+
+			// Retornar el número de fila donde se encontró el CBU, o "-1" si no se encuentra
+			if (!fila.equals("-1")) {       // le resto 1 porque cuenta el theader como fila
+				int filaInt = Integer.parseInt(fila);  // Convertir el string a int
+				filaInt = filaInt - 1;  // Restar 1
+				fila = String.valueOf(filaInt);  // Convertir de nuevo a string
+			}
+			return fila;
+
+		} catch (Exception e) {
+			// Manejo de excepciones si algo sale mal
+			e.printStackTrace();
+			return "-1";
+		}
+	}
+
+	public boolean isElementPresent(String xpath) {
+		try {
+			return driver.findElement(By.xpath(xpath)).isDisplayed();
+		} catch (NoSuchElementException e) {
+			return false;
+		}
+	}
+
+	public boolean isOnDashboardPage() {
+		String currentUrl = driver.getCurrentUrl();
+		return currentUrl.contains("dashboard");
+	}
+
+	public List listAccountNumber() {
+		List<String> listaCBUs = new ArrayList<>();
+		// Obtener todos los elementos que contienen el CBU
+		List<WebElement> elementosCBU = driver.findElements(By.xpath("//div[contains(text(), 'CBU')]"));
+		// Recorrer los elementos y extraer el texto
+		for (WebElement elemento : elementosCBU) {
+			String texto = elemento.getText();
+			// Extraer solo el número del CBU
+			String cbu = texto.replace("CBU ", "").trim();
+			listaCBUs.add(cbu);
+		}
+		return listaCBUs; // Retornar la lista de CBUs
+	}
+
+	public WebElement obtenerLista(String contenedorXpath) {
+		// Esperar a que el contenedor esté visible
+		WebElement dropdown = waitShort.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(contenedorXpath)));
+
+		// Busca dentro del dropdown la opción que contiene el texto deseado
+		return dropdown.findElement(By.xpath(contenedorXpath));
+	}
+
+	public static int[] getCurrentDate() {
+		LocalDate today = LocalDate.now();
+		return new int[]{today.getDayOfMonth(), today.getMonthValue(), today.getYear()};
+	}
+
+	public void waitSeconds(int seconds) {
+		try {
+			Thread.sleep(seconds * 1000);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			System.out.println("Wait was interrupted: " + e.getMessage());
+		}
+	}
 
 
 	/**
@@ -922,54 +930,52 @@ public class SeleniumBase {
 		}
 	}
 
-    /**
-     * Permite escribir una fecha con JavaScript.
-     *
-     * @param fechaEsperada indicamos la fecha por parametro.
-     */
-    protected void seleccionarFechaJS(By selector, String fechaEsperada) {
-        try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            WebElement campoFecha = wait.until(ExpectedConditions.elementToBeClickable(selector));
+	/**
+	 * Permite escribir una fecha con JavaScript.
+	 *
+	 * @param fechaEsperada indicamos la fecha por parametro.
+	 */
+	protected void seleccionarFechaJS(By selector, String fechaEsperada) {
+		try {
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+			WebElement campoFecha = wait.until(ExpectedConditions.elementToBeClickable(selector));
 
-            // **Opción 1: Intentar con JavaScript**
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            js.executeScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('change'));", campoFecha, fechaEsperada);
+			// **Opción 1: Intentar con JavaScript**
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+			js.executeScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('change'));", campoFecha, fechaEsperada);
 
-            // Verificar si la fecha se estableció correctamente
-            String fechaActual = campoFecha.getAttribute("value");
-            if (fechaActual.equals(fechaEsperada)) {
-                logger.info("Fecha '{}' establecida con JavaScript.", fechaEsperada);
-                return;
-            }
+			// Verificar si la fecha se estableció correctamente
+			String fechaActual = campoFecha.getAttribute("value");
+			if (fechaActual.equals(fechaEsperada)) {
+				logger.info("Fecha '{}' establecida con JavaScript.", fechaEsperada);
+				return;
+			}
 
-            // **Opción 2: Si JavaScript falla, usar flechas del teclado**
-            campoFecha.click(); // Abrir el calendario
-            Thread.sleep(500);
+			// **Opción 2: Si JavaScript falla, usar flechas del teclado**
+			campoFecha.click(); // Abrir el calendario
+			Thread.sleep(500);
 
-            int intentos = 0;
-            while (!fechaActual.equals(fechaEsperada) && intentos < 50) {
-                if (fechaActual.compareTo(fechaEsperada) > 0) {
-                    campoFecha.sendKeys(Keys.ARROW_DOWN); // Retroceder fechas
-                } else {
-                    campoFecha.sendKeys(Keys.ARROW_UP); // Avanzar fechas
-                }
+			int intentos = 0;
+			while (!fechaActual.equals(fechaEsperada) && intentos < 50) {
+				if (fechaActual.compareTo(fechaEsperada) > 0) {
+					campoFecha.sendKeys(Keys.ARROW_DOWN); // Retroceder fechas
+				} else {
+					campoFecha.sendKeys(Keys.ARROW_UP); // Avanzar fechas
+				}
 
-                Thread.sleep(100);
-                fechaActual = campoFecha.getAttribute("value"); // Re-obtener la fecha
-                intentos++;
-            }
+				Thread.sleep(100);
+				fechaActual = campoFecha.getAttribute("value"); // Re-obtener la fecha
+				intentos++;
+			}
 
-            if (!fechaActual.equals(fechaEsperada)) {
-                throw new RuntimeException("No se pudo establecer la fecha después de " + intentos + " intentos.");
-            }
+			if (!fechaActual.equals(fechaEsperada)) {
+				throw new RuntimeException("No se pudo establecer la fecha después de " + intentos + " intentos.");
+			}
 
-            logger.info("Fecha '{}' seleccionada correctamente.", fechaEsperada);
-        } catch (Exception e) {
-            logger.error("Error al seleccionar la fecha '{}': {}", fechaEsperada, e.getMessage());
-        }
-    }
-
-
+			logger.info("Fecha '{}' seleccionada correctamente.", fechaEsperada);
+		} catch (Exception e) {
+			logger.error("Error al seleccionar la fecha '{}': {}", fechaEsperada, e.getMessage());
+		}
+	}
 
 }
