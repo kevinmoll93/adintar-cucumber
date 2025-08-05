@@ -398,6 +398,144 @@ public class SeleniumBase {
 		}
 	}
 
+	protected void escribirConEventos(By localizador, String texto) {
+		try {
+			logger.info("Escribiendo (con eventos) '{}' en: {}", texto, localizador);
+			WebElement elemento = esperarElemento(localizador);
+			((JavascriptExecutor) driver).executeScript("const el = arguments[0];" + "const val = arguments[1];" + "el.focus();" +
+					// si el control tiene un input interno con value distinto, lo seteamos también
+					"if (el.tagName.toLowerCase() !== 'input') {" + "  const inner = el.querySelector('input'); if(inner) inner.value = val;" + "}" + "el.value = val;" + "const evTypes = ['keydown','keyup','keypress','input','change','blur'];" + "evTypes.forEach(t => {" + "  const ev = new Event(t, { bubbles: true });" + "  el.dispatchEvent(ev);" + "  if (el.querySelector) { const inner = el.querySelector('input'); if(inner) inner.dispatchEvent(ev); }" + "});" + "el.blur();", elemento, texto);
+			logger.info("Escritura (con eventos) realizada.");
+		} catch (Exception e) {
+			logger.error("Error en escribirConEventos: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void escribirConActions(By localizador, String texto) {
+		try {
+			logger.info("Escribiendo (Actions) '{}' en: {}", texto, localizador);
+			WebElement elemento = esperarElemento(localizador);
+			// Aseguramos focus y borrado
+			elemento.click();
+			elemento.clear();
+			Actions actions = new Actions(driver);
+			// Enviar char por char con pequeña pausa
+			for (char c : texto.toCharArray()) {
+				actions.sendKeys(String.valueOf(c)).pause(Duration.ofMillis(50));
+			}
+			actions.build().perform();
+			logger.info("Escritura (Actions) realizada.");
+		} catch (Exception e) {
+			logger.error("Error en escribirConActions: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected void escribirRobusto(By localizador, String texto) {
+		try {
+			logger.info("Escribiendo (robusto) '{}' en: {}", texto, localizador);
+			WebElement elemento = esperarElemento(localizador);
+
+			// 1) Intento por JS + eventos
+			escribirConEventos(localizador, texto);
+
+			// 2) Verifico
+			String valorActual = elemento.getAttribute("value");
+			if (valorActual == null) valorActual = "";
+			logger.info("Valor actual tras JS: '{}'", valorActual);
+
+			// Si no coincide, intentamos Actions (char a char)
+			if (!valorActual.trim().contains(texto.trim())) {
+				logger.info("Valor no coincide, reintentando con Actions...");
+				escribirConActions(localizador, texto);
+			} else {
+				logger.info("Valor coincidió tras JS + eventos.");
+			}
+		} catch (Exception e) {
+			logger.error("Error en escribirRobusto: {}", e.getMessage());
+			alertaError(e);
+		}
+	}
+
+	protected boolean escribirTelerikRobusto(By localizador, String texto, boolean textoConGuiones) {
+		try {
+			logger.info("Escribir (TelerikRobusto) '{}' en {}", texto, localizador);
+			WebElement elemento = esperarElemento(localizador);
+			String id = elemento.getAttribute("id");
+			if (id == null || id.isEmpty()) {
+				logger.warn("El elemento no tiene id.");
+				return false;
+			}
+			String clientId = id;
+			if (clientId.endsWith("_text")) clientId = clientId.substring(0, clientId.length() - 5);
+
+			// Preparar valor para la API (sin guiones si indicas false)
+			String textoParaApi = textoConGuiones ? texto : texto.replaceAll("[^0-9A-Za-z]", "");
+
+			String script = "var cid=arguments[0]; var val=arguments[1];" + "if(typeof $find!=='function') { return {ok:false,msg:'$find_no_existe'}; }" + "var c=$find(cid); if(!c) { return {ok:false,msg:'control_no_encontrado'}; }" + "if(typeof c.set_value==='function') {" + "  c.set_value(val);" + "  if(typeof c.focus==='function') c.focus();" + "  if(typeof c.blur==='function') c.blur();" + "  var read=null;" + "  if(typeof c.get_valueWithPromptAndLiterals==='function') read=c.get_valueWithPromptAndLiterals();" + "  else if(typeof c.get_value==='function') read=c.get_value();" + "  else if(c.get_element) { var el=c.get_element(); read = el && el.value ? el.value : null; }" + "  return {ok:true, value: read};" + "} else {" + "  var el = c.get_element ? c.get_element() : null;" + "  if(el) { el.value = val; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true, value: el.value}; }" + "  return {ok:false, msg:'no_set_value_no_element'};" + "}";
+
+			Object rawResult = ((JavascriptExecutor) driver).executeScript(script, clientId, textoParaApi);
+			logger.info("Resultado JS (escribirTelerik) rawResult={}", rawResult);
+
+			// Procesar resultado
+			String valorVisible = elemento.getAttribute("value");
+			String valorApi = null;
+			if (rawResult instanceof java.util.Map) {
+				java.util.Map map = (java.util.Map) rawResult;
+				Object v = map.get("value");
+				Object msg = map.get("msg");
+				logger.info("JS result value={}, msg={}", v, msg);
+				if (v != null) valorApi = v.toString();
+			} else if (rawResult != null) {
+				valorApi = rawResult.toString();
+			}
+
+			logger.info("Valor visible tras JS: '{}', valor API: '{}'", valorVisible, valorApi);
+
+			String expectedComparable = textoParaApi.replaceAll("[^0-9A-Za-z]", "").trim();
+			boolean okApi = (valorApi != null && valorApi.replaceAll("[^0-9A-Za-z]", "").contains(expectedComparable));
+			boolean okVisible = (valorVisible != null && valorVisible.replaceAll("[^0-9A-Za-z]", "").contains(expectedComparable));
+			if (okApi || okVisible) {
+				logger.info("Seteo exitoso vía API/visible.");
+				return true;
+			}
+
+			// Fallback Actions
+			logger.warn("No coincidió el valor tras set_value. Intentando fallback con Actions (tecla a tecla).");
+			try {
+				elemento.click();
+				elemento.clear();
+				Actions actions = new Actions(driver);
+				for (char c : texto.toCharArray()) {
+					actions.sendKeys(String.valueOf(c)).pause(Duration.ofMillis(40));
+				}
+				actions.perform();
+				String afterVisible = elemento.getAttribute("value");
+				logger.info("Valor visible tras fallback Actions: '{}'", afterVisible);
+				if (afterVisible != null && afterVisible.replaceAll("[^0-9A-Za-z]", "").contains(expectedComparable)) {
+					logger.info("Seteo exitoso via Actions.");
+					return true;
+				} else {
+					logger.error("Fallback con Actions no logró establecer el valor esperado.");
+				}
+			} catch (Exception actEx) {
+				logger.error("Error en fallback Actions: {}", actEx.getMessage());
+			}
+
+			logger.error("No fue posible setear el valor en el control Telerik.");
+			return false;
+
+		} catch (JavascriptException jse) {
+			logger.error("JavascriptException al ejecutar script: {}", jse.getMessage());
+			alertaError(jse);
+			return false;
+		} catch (Exception e) {
+			logger.error("Excepción en escribirTelerikRobusto: {}", e.getMessage());
+			alertaError(e);
+			return false;
+		}
+	}
 
 	/**
 	 * Limpia el contenido de un campo de texto, esperando que esté visible.

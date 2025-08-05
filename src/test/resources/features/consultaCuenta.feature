@@ -1,6 +1,58 @@
 @ConsultaCuenta
 Feature: Permite realizar una consulta de cuenta con diferentes filtros
 
+  Scenario Outline: Consultar cuenta ingresada por Admin y numero de tarjeta
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por administradora "<administradora>" y numero de tarjeta
+	And ingresa el numero de tarjeta solicitado "<tarjeta>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | administradora | tarjeta          |
+	  | 03-VISA        | 4508152004718407 |
+
+  Scenario Outline: Consultar cuenta ingresada por Admin y numero de cuenta
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por administradora "<administradora>" y numero de cuenta
+	And ingresa el numero de cuenta solicitado "<cuenta>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | administradora | cuenta   |
+	  | 01-MASTERCARD  | 49544801 |
+
+  Scenario Outline: Consultar cuenta ingresada por tipo de Clave interna
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por tipo "<tipo>" y numero de clave interna
+	And ingresa la clave interna solicitada "<clave>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | tipo      | clave          |
+	  | 4  - CUIC | 60000035324185 |
+
+  Scenario Outline: Consultar cuenta ingresada por tipo de Documento
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por tipo "<tipo>" y numero de documento
+	And ingresa el documento solicitado "<documento>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | tipo                 | documento |
+	  | LC  - LIBRETA CIVICA | 11858730  |
+
   Scenario Outline: Consultar cuenta ingresada con filtro de Apellido y Nombre
 	Given el usuario accede a la consulta de Cuentas
 	When selecciona el filtro por Apellido y Nombre
