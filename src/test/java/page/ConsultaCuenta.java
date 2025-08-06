@@ -20,6 +20,10 @@ public class ConsultaCuenta extends SeleniumBase {
 	private final By rbtAdminNumeroTarjeta = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCuenta1_optTarjeta']");
 	private final By lnkAdminNumeroTarjeta = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCuenta1_cboBusqAdminTar_Input']");
 	private final By fldAdminNumeroTarjeta = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCuenta1_txtNroTar_text']");
+	private final By rbtNumeroCuentaNexo = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCuenta1_optCuentaNexos']");
+	private final By fldNumeroCuentaNexo = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCuenta1_txtCuentaNexos_text']");
+	private final By rbtNumeroCUIT = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCuenta1_optCUIT']");
+	private final By fldNumeroCUIT = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCuenta1_txtCUIT_text']");
 	private final By btnBuscar = By.xpath("//input[@value='Buscar']");
 
 	/**
@@ -105,9 +109,27 @@ public class ConsultaCuenta extends SeleniumBase {
 	}
 
 	public void ingresarAdminNumeroTarjeta(String pTarjeta) {
-		//clickear(fldAdminNumeroTarjeta);
-		//limpiar(fldAdminNumeroTarjeta);
 		escribirTelerikRobusto(fldAdminNumeroTarjeta, pTarjeta, false);
+	}
+
+	public void clickFiltroNumeroCuentaNexo() {
+		cambiarFocoNuevaPestania();
+		existe(rbtNumeroCuentaNexo);
+		clickear(rbtNumeroCuentaNexo);
+	}
+
+	public void ingresarNumeroCuentaNexo(String pNexo) {
+		escribirTelerikRobusto(fldNumeroCuentaNexo, pNexo, false);
+	}
+
+	public void clickFiltroNumeroCUIT() {
+		cambiarFocoNuevaPestania();
+		existe(rbtNumeroCUIT);
+		clickear(rbtNumeroCUIT);
+	}
+
+	public void ingresarNumeroCUIT(String pCUIT) {
+		escribirTelerikRobusto(fldNumeroCUIT, pCUIT, false);
 	}
 
 	public void clickBuscar() {

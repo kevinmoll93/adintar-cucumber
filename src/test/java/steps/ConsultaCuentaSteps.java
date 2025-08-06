@@ -70,4 +70,24 @@ public class ConsultaCuentaSteps {
 	public void ingresaElNumeroDeTarjetaSolicitado(String tarjeta) {
 		consulta.ingresarAdminNumeroTarjeta(tarjeta);
 	}
+
+	@When("selecciona el filtro por numero de cuenta Nexos")
+	public void seleccionaElFiltroPorNumeroDeCuentaNexos() {
+		consulta.clickFiltroNumeroCuentaNexo();
+	}
+
+	@And("ingresa el numero de cuenta nexos solicitado {string}")
+	public void ingresaElNumeroDeCuentaNexosSolicitado(String nexos) {
+		consulta.ingresarNumeroCuentaNexo(nexos);
+	}
+
+	@When("selecciona el filtro por numero de CUIT")
+	public void seleccionaElFiltroPorNumeroDeCUIT() {
+		consulta.clickFiltroNumeroCUIT();
+	}
+
+	@And("ingresa el numero de CUIT solicitado {string}")
+	public void ingresaElNumeroDeCUITSolicitado(String cuit) {
+		consulta.ingresarNumeroCUIT(cuit);
+	}
 }

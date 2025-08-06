@@ -16,6 +16,8 @@ public class Home extends SeleniumBase {
 	private final By lnkCuentas = By.xpath("//a[@id='MenuIzquierdot0']");
 	private final By lnkConsultas = By.xpath("//a[@id='MenuIzquierdot1']");
 	private final By lnkConsultaCuentas = By.xpath("//a[@id='ListaProgt0']");
+	private final By lnkListados = By.xpath("//a[@id='MenuIzquierdot2']");
+	private final By lnkConsultaNovedades = By.xpath("//a[@id='ListaProgt1']");
 
 
 	/**
@@ -57,5 +59,13 @@ public class Home extends SeleniumBase {
 
 	public void clickConsultaCuentas() {
 		clickear(lnkConsultaCuentas);
+	}
+
+	public void clickCuentasListados() {
+		clickear(lnkListados);
+	}
+
+	public void clickConsultaNovedades() {
+		clickear(lnkConsultaNovedades);
 	}
 }
