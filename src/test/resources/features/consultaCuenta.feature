@@ -1,6 +1,32 @@
 @ConsultaCuenta
 Feature: Permite realizar una consulta de cuenta con diferentes filtros
 
+  Scenario Outline: Consultar cuenta ingresada por numero de CUIT
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por numero de CUIT
+	And ingresa el numero de CUIT solicitado "<NumeroCUIT>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | NumeroCUIT    |
+	  | 20-20606955-5 |
+
+  Scenario Outline: Consultar cuenta ingresada por numero de cuenta Nexos
+	Given el usuario accede a la consulta de Cuentas
+	When selecciona el filtro por numero de cuenta Nexos
+	And ingresa el numero de cuenta nexos solicitado "<cuentaNexos>"
+	Then realiza la busqueda de la consulta con exito
+
+	Given el usuario espera unos momentos para cerrar sesion
+	When realiza el cierre de sesion
+	Then deberia ver el texto de cierre exitoso
+	Examples:
+	  | cuentaNexos    |
+	  | 11100479303717 |
+
   Scenario Outline: Consultar cuenta ingresada por Admin y numero de tarjeta
 	Given el usuario accede a la consulta de Cuentas
 	When selecciona el filtro por administradora "<administradora>" y numero de tarjeta
