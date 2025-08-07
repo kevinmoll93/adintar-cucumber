@@ -16,4 +16,12 @@ public class HomeSteps {
 		home.clickConsultas();
 		home.clickConsultaCuentas();
 	}
+
+	@Given("el usuario accede a la consulta de Novedades")
+	public void elUsuarioAccedeALaConsultaDeNovedades() {
+		driver.get(Config.urlPrincipal);
+		home.clickCuentas();
+		home.clickCuentasListados();
+		home.clickConsultaNovedades();
+	}
 }
