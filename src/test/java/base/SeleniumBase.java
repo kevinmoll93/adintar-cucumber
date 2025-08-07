@@ -14,6 +14,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -602,6 +604,10 @@ public class SeleniumBase {
 			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 			WebElement opcion = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
 
+			((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", opcion);
+
+			Thread.sleep(500);
+
 			// Haz clic en la opción encontrada
 			logger.info("Seleccionando la opción: {}", opcion.getText().trim());
 			opcion.click();
@@ -1065,6 +1071,69 @@ public class SeleniumBase {
 		} catch (AWTException | InterruptedException e) {
 			e.printStackTrace();
 			System.err.println("Error al adjuntar archivo: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Guarda un archivo PDF en una ubicación especificada con nombre personalizado.
+	 * Espera dinámicamente a que aparezca la ventana de "Guardar como".
+	 *
+	 * @param nombreBase El nombre base del archivo (ej: "consultaMastercard").
+	 *                   Se le agrega fecha y hora automáticamente.
+	 */
+	protected void guardarArchivoWindows(String nombreBase) {
+		try {
+			// Ruta fija + nombre dinámico con fecha y hora
+			String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+			String rutaCompleta = "C:\\Temp\\" + nombreBase + "_" + timestamp + ".pdf";
+
+			// Espera dinámica (hasta 30 segundos)
+			boolean ventanaEncontrada = false;
+			int maxWaitSeconds = 30;
+			int waitedSeconds = 0;
+
+			while (!ventanaEncontrada && waitedSeconds < maxWaitSeconds) {
+				for (java.awt.Window window : java.awt.Window.getWindows()) {
+					if (window.isActive() && window.isVisible()) {
+						ventanaEncontrada = true;
+						break;
+					}
+				}
+				if (!ventanaEncontrada) {
+					Thread.sleep(1000);
+					waitedSeconds++;
+				}
+			}
+
+			if (!ventanaEncontrada) {
+				System.err.println("No se detectó la ventana de 'Guardar como'.");
+				return;
+			}
+
+			// Copiar ruta al portapapeles
+			StringSelection seleccion = new StringSelection(rutaCompleta);
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(seleccion, null);
+
+			// Usar Robot para pegar la ruta y guardar
+			Robot robot = new Robot();
+
+			// Pegar (Ctrl + V)
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_V);
+			robot.keyRelease(KeyEvent.VK_V);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+
+			Thread.sleep(300); // pequeña pausa antes de Enter
+
+			// Presionar Enter para guardar
+			robot.keyPress(KeyEvent.VK_ENTER);
+			robot.keyRelease(KeyEvent.VK_ENTER);
+
+			System.out.println("Archivo guardado como: " + rutaCompleta);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Error al guardar archivo: " + e.getMessage());
 		}
 	}
 
