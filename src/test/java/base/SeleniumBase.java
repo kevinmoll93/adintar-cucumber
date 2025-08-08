@@ -1,6 +1,7 @@
 package base;
 
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
@@ -12,13 +13,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -219,12 +220,33 @@ public class SeleniumBase {
 		}
 	}
 
-	protected void clickConJavaScript(By localizador) {
+	protected void clickearConJavaScript(By localizador) {
 		WebElement elemento = encontrarElemento(localizador);
 		((JavascriptExecutor) driver).executeScript("arguments[0].click();", elemento);
 	}
 
-	protected void clickWebElement(WebElement elemento) {
+	protected void clickearBotonAbrirPDF() {
+		esperar(5000);
+		try {
+
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+
+			WebElement botonAbrir = (WebElement) js.executeScript("return document.querySelector('pdf-viewer')" + ".shadowRoot.querySelector('#open-button');");
+
+			if (botonAbrir != null) {
+				botonAbrir.click();
+				System.out.println("Botón 'Abrir' clickeado correctamente.");
+			} else {
+				System.err.println("No se encontró el botón 'Abrir' dentro del shadow DOM.");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Error al intentar hacer click en 'Abrir': " + e.getMessage());
+		}
+	}
+
+	protected void clickearWebElement(WebElement elemento) {
 		elemento.click();
 	}
 
@@ -1134,6 +1156,93 @@ public class SeleniumBase {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Error al guardar archivo: " + e.getMessage());
+		}
+	}
+
+	protected void descargarArchivoNoSeguro() {
+		try {
+			Robot robot = new Robot();
+			robot.setAutoDelay(400);
+
+			// Paso 1: Abrir historial de descargas
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_J);
+			robot.keyRelease(KeyEvent.VK_J);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+
+			Thread.sleep(2000); // Espera a que cargue la pestaña de descargas
+
+			// Paso 2: Ir hasta los 3 puntitos del archivo
+			for (int i = 0; i < 3; i++) {
+				robot.keyPress(KeyEvent.VK_TAB);
+				robot.keyRelease(KeyEvent.VK_TAB);
+				Thread.sleep(200);
+			}
+
+			// Paso 3: Abrir el menú contextual de los 3 puntos
+			robot.keyPress(KeyEvent.VK_ENTER);
+			robot.keyRelease(KeyEvent.VK_ENTER);
+			Thread.sleep(500);
+
+			// Paso 4: Bajar una opción hasta "Descargar archivo no seguro"
+			robot.keyPress(KeyEvent.VK_DOWN);
+			robot.keyRelease(KeyEvent.VK_DOWN);
+			Thread.sleep(200);
+
+			// Paso 5: Confirmar la descarga
+			robot.keyPress(KeyEvent.VK_ENTER);
+			robot.keyRelease(KeyEvent.VK_ENTER);
+
+			System.out.println("Descarga de archivo no seguro confirmada.");
+
+			// Paso 6 final: Esperar que termine la descarga (ajusta el tiempo si es necesario)
+			Thread.sleep(5000);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Error durante la descarga del archivo no seguro: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Espera dinámicamente a que se descargue un PDF y lo renombra con un nombre base + timestamp.
+	 *
+	 * @param nombreBase       Nombre base del archivo sin extensión (ej: "consultaMastercard")
+	 * @param carpetaDescargas Ruta donde se descarga el archivo (ej: "C:\\Temp")
+	 * @param tiempoMaximoSeg  Tiempo máximo de espera en segundos
+	 */
+	public void renombrarArchivoPDF(String nombreBase, String carpetaDescargas, int tiempoMaximoSeg) {
+		File carpeta = new File(carpetaDescargas);
+
+		long tiempoInicio = System.currentTimeMillis();
+		File archivoFinal = null;
+
+		while (System.currentTimeMillis() - tiempoInicio < tiempoMaximoSeg * 1000) {
+			// Buscar cualquier archivo PDF que no esté en descarga
+			Optional<File> archivoOpt = Arrays.stream(carpeta.listFiles()).filter(f -> f.isFile() && f.getName().endsWith(".pdf") && !f.getName().endsWith(".crdownload")).max(Comparator.comparingLong(File::lastModified));
+
+			if (archivoOpt.isPresent()) {
+				archivoFinal = archivoOpt.get();
+				break;
+			}
+
+			try {
+				Thread.sleep(500); // Espera medio segundo antes de volver a revisar
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		if (archivoFinal != null) {
+			String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+			File nuevoArchivo = new File(carpetaDescargas + "\\" + nombreBase + "_" + timestamp + ".pdf");
+			if (archivoFinal.renameTo(nuevoArchivo)) {
+				System.out.println("Archivo renombrado a: " + nuevoArchivo.getName());
+			} else {
+				System.out.println("No se pudo renombrar el archivo.");
+			}
+		} else {
+			System.out.println("No se encontró un PDF descargado en el tiempo límite.");
 		}
 	}
 
