@@ -3,6 +3,7 @@ package page;
 import base.SeleniumBase;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 public class ConsultaNovedades extends SeleniumBase {
 	private final By rbtFormatoPDF = By.xpath("//input[@id='ctl00_optPDF']");
@@ -21,7 +22,7 @@ public class ConsultaNovedades extends SeleniumBase {
 
 	private final By btnGenerarReporte = By.xpath("//input[@id='ctl00_cmdGenerar']");
 
-	private final By btnGuardarPDF = By.xpath("//button[@id='save']");
+	private final By btnGuardarPDF = By.xpath("//a");
 
 	/**
 	 * Constructor que inicializa el driver de Selenium.
@@ -92,8 +93,28 @@ public class ConsultaNovedades extends SeleniumBase {
 		clickear(btnGenerarReporte);
 	}
 
+	public void clickBotonAbrirDentroIframe() {
+		try {
+			// Cambiar al iframe
+			driver.switchTo().frame("ctl00_framePDF");
+
+			// Ahora sí buscar y hacer click
+			WebElement botonAbrir = driver.findElement(By.id("open-button"));
+			botonAbrir.click();
+
+			System.out.println("Botón 'Abrir' clickeado correctamente dentro del iframe.");
+
+			// Volver al contenido principal
+			driver.switchTo().defaultContent();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Error al hacer click en 'Abrir': " + e.getMessage());
+		}
+	}
+
 	public void guardarPDF(String pPDF) {
-		clickear(btnGuardarPDF);
-		guardarArchivoWindows(pPDF);
+		descargarArchivoNoSeguro();
+		renombrarArchivoPDF(pPDF, "C:\\Temp", 50);
 	}
 }

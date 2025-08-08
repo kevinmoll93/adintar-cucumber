@@ -34,6 +34,7 @@ public class ConsultaNovedadesSteps {
 	@Then("Genera y guarda {string} el reporte PDF de manera exitosa")
 	public void generaYGuardaElReportePDFDeManeraExitosa(String archivo) {
 		consulta.clickGenerarReporte();
+		consulta.clickBotonAbrirDentroIframe();
 		consulta.guardarPDF(archivo);
 	}
 }
