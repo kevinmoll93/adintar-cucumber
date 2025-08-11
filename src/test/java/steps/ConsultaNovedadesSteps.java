@@ -10,10 +10,9 @@ public class ConsultaNovedadesSteps {
 	WebDriver driver = Hooks.getDriver();
 	ConsultaNovedades consulta = new ConsultaNovedades(driver);
 
-	@When("selecciona el formato salida PDF y el filtro tipo de reporte Detalle")
+	@When("selecciona el formato salida PDF")
 	public void seleccionaElFormatoSalidaPDFYElFiltroTipoDeReporteDetalle() {
 		consulta.clickFormatoSalidaPDF();
-		consulta.clickTipoReporteDetalles();
 	}
 
 	@And("selecciona filtro Administradora {string}, Novedad tipo {string} y Fecha de alta desde {string}")
@@ -31,10 +30,26 @@ public class ConsultaNovedadesSteps {
 		consulta.ingresarFechaAltaHasta(fecha);
 	}
 
-	@Then("Genera y guarda {string} el reporte PDF de manera exitosa")
+	@Then("Genera y guarda el reporte PDF {string} de manera exitosa")
 	public void generaYGuardaElReportePDFDeManeraExitosa(String archivo) {
 		consulta.clickGenerarReporte();
 		consulta.clickBotonAbrirDentroIframe();
 		consulta.guardarPDF(archivo);
+	}
+
+	@When("selecciona el formato salida Excel")
+	public void seleccionaElFormatoSalidaExcelYElFiltroTipoDeReporteDetalle() {
+		consulta.clickFormatoSalidaExcel();
+	}
+
+	@And("selecciona el filtro tipo de reporte Detalle")
+	public void seleccionaElFiltroTipoDeReporteDetalle() {
+		consulta.clickTipoReporteDetalles();
+	}
+
+	@Then("Genera y guarda el reporte Excel {string} de manera exitosa")
+	public void generaYGuardaElReporteExcelDeManeraExitosa(String excel) {
+		consulta.clickGenerarReporte();
+		consulta.guardarExcel(excel);
 	}
 }
