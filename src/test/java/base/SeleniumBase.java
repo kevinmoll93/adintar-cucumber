@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.function.Supplier;
 
 
 /**
@@ -1159,67 +1160,140 @@ public class SeleniumBase {
 		}
 	}
 
-	protected void descargarArchivoNoSeguro() {
+	/**
+	 * Descarga un archivo marcado como "no seguro" desde el gestor de descargas de Chrome.
+	 * Utiliza Robot para abrir el historial y Selenium para interactuar con el Shadow DOM.
+	 */
+	protected void descargarArchivoNoSeguro(int tiempoMaximoSeg, String carpetaDescargas) {
+		String handleOriginal = driver.getWindowHandle(); // Guardamos pestaña original
 		try {
 			Robot robot = new Robot();
 			robot.setAutoDelay(400);
 
-			// Paso 1: Abrir historial de descargas
+			// Guardar handles existentes antes de abrir gestor
+			Set<String> handlesAntes = driver.getWindowHandles();
+
+			// Paso 1: Abrir historial de descargas con Ctrl + J
 			robot.keyPress(KeyEvent.VK_CONTROL);
 			robot.keyPress(KeyEvent.VK_J);
 			robot.keyRelease(KeyEvent.VK_J);
 			robot.keyRelease(KeyEvent.VK_CONTROL);
 
-			Thread.sleep(2000); // Espera a que cargue la pestaña de descargas
-
-			// Paso 2: Ir hasta los 3 puntitos del archivo
-			for (int i = 0; i < 3; i++) {
-				robot.keyPress(KeyEvent.VK_TAB);
-				robot.keyRelease(KeyEvent.VK_TAB);
-				Thread.sleep(200);
+			// Paso 2: Esperar a que aparezca un handle nuevo
+			String handleGestor = esperarHastaObtenerHandleNuevo(handlesAntes, tiempoMaximoSeg);
+			if (handleGestor == null) {
+				throw new RuntimeException("No se abrió el gestor de descargas.");
 			}
 
-			// Paso 3: Abrir el menú contextual de los 3 puntos
-			robot.keyPress(KeyEvent.VK_ENTER);
-			robot.keyRelease(KeyEvent.VK_ENTER);
-			Thread.sleep(500);
+			// Paso 3: Cambiar a la pestaña del gestor de descargas
+			driver.switchTo().window(handleGestor);
 
-			// Paso 4: Bajar una opción hasta "Descargar archivo no seguro"
-			robot.keyPress(KeyEvent.VK_DOWN);
-			robot.keyRelease(KeyEvent.VK_DOWN);
-			Thread.sleep(200);
+			// Paso 4: Esperar a que cargue el gestor
+			boolean gestorVisible = esperarHasta(() -> driver.findElements(By.tagName("downloads-manager")).size() > 0, tiempoMaximoSeg);
+			if (!gestorVisible) throw new RuntimeException("No se cargó el gestor de descargas.");
 
-			// Paso 5: Confirmar la descarga
-			robot.keyPress(KeyEvent.VK_ENTER);
-			robot.keyRelease(KeyEvent.VK_ENTER);
+			// Paso 5: Acceder al Shadow DOM
+			WebElement downloadsManager = driver.findElement(By.tagName("downloads-manager"));
+			SearchContext shadowRoot1 = (SearchContext) ((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot", downloadsManager);
+
+			// Esperar a que aparezca el primer "downloads-item"
+			boolean itemVisible = esperarHasta(() -> shadowRoot1.findElements(By.cssSelector("downloads-item")).size() > 0, tiempoMaximoSeg);
+
+			if (!itemVisible) {
+				throw new RuntimeException("No se encontró ningún elemento de descarga en el gestor.");
+			}
+
+			WebElement itemsList = shadowRoot1.findElement(By.cssSelector("downloads-item"));
+			SearchContext shadowRoot2 = (SearchContext) ((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot", itemsList);
+
+			// Paso 6: Click en los 3 puntitos
+			WebElement menuButton = shadowRoot2.findElement(By.cssSelector("#more-actions"));
+			menuButton.click();
+
+			// Paso 7: Click en "Descargar archivo no seguro"
+			WebElement btnDescargar = shadowRoot2.findElement(By.cssSelector("#save-dangerous"));
+			btnDescargar.click();
+			esperar(1000);
 
 			System.out.println("Descarga de archivo no seguro confirmada.");
 
-			// Paso 6 final: Esperar que termine la descarga (ajusta el tiempo si es necesario)
-			Thread.sleep(5000);
+			// Paso 8: Esperar que finalice la descarga
+			boolean descargaCompleta = esperarHasta(() -> {
+				File carpeta = new File(carpetaDescargas);
+				File[] enDescarga = carpeta.listFiles((dir, name) -> name.endsWith(".crdownload"));
+				return enDescarga == null || enDescarga.length == 0;
+			}, tiempoMaximoSeg);
+
+			if (!descargaCompleta) {
+				System.err.println("Advertencia: La descarga no terminó antes del tiempo máximo.");
+			} else {
+				System.out.println("Descarga completada.");
+			}
+
+			// Paso 9: Cerrar la pestaña del gestor y volver a la original
+			driver.close();
+			driver.switchTo().window(handleOriginal);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Error durante la descarga del archivo no seguro: " + e.getMessage());
+			try {
+				driver.switchTo().window(handleOriginal);
+			} catch (Exception ignored) {
+			}
 		}
 	}
 
+	// Espera a que aparezca un nuevo handle (pestaña) y lo devuelve
+	private String esperarHastaObtenerHandleNuevo(Set<String> handlesAntes, int tiempoMaximoSeg) {
+		long inicio = System.currentTimeMillis();
+		while (System.currentTimeMillis() - inicio < tiempoMaximoSeg * 1000) {
+			Set<String> handlesAhora = driver.getWindowHandles();
+			handlesAhora.removeAll(handlesAntes);
+			if (!handlesAhora.isEmpty()) {
+				return handlesAhora.iterator().next();
+			}
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException ignored) {
+			}
+		}
+		return null;
+	}
+
+	// Espera condicional
+	private boolean esperarHasta(Supplier<Boolean> condicion, int tiempoMaximoSeg) {
+		long inicio = System.currentTimeMillis();
+		while (System.currentTimeMillis() - inicio < tiempoMaximoSeg * 1000) {
+			try {
+				if (condicion.get()) return true;
+			} catch (Exception ignored) {
+			}
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException ignored) {
+			}
+		}
+		return false;
+	}
+
 	/**
-	 * Espera dinámicamente a que se descargue un PDF y lo renombra con un nombre base + timestamp.
+	 * Espera dinámicamente a que se descargue un archivo (PDF, Excel, etc.) y lo renombra con un nombre base + timestamp.
 	 *
 	 * @param nombreBase       Nombre base del archivo sin extensión (ej: "consultaMastercard")
 	 * @param carpetaDescargas Ruta donde se descarga el archivo (ej: "C:\\Temp")
+	 * @param tipoArchivo      Extensión del archivo a buscar (ej: ".pdf", ".xls", ".xlsx")
 	 * @param tiempoMaximoSeg  Tiempo máximo de espera en segundos
 	 */
-	public void renombrarArchivoPDF(String nombreBase, String carpetaDescargas, int tiempoMaximoSeg) {
+	public void renombrarArchivo(String nombreBase, String carpetaDescargas, String tipoArchivo, int tiempoMaximoSeg) {
 		File carpeta = new File(carpetaDescargas);
 
 		long tiempoInicio = System.currentTimeMillis();
 		File archivoFinal = null;
 
 		while (System.currentTimeMillis() - tiempoInicio < tiempoMaximoSeg * 1000) {
-			// Buscar cualquier archivo PDF que no esté en descarga
-			Optional<File> archivoOpt = Arrays.stream(carpeta.listFiles()).filter(f -> f.isFile() && f.getName().endsWith(".pdf") && !f.getName().endsWith(".crdownload")).max(Comparator.comparingLong(File::lastModified));
+			// Buscar cualquier archivo del tipo especificado que no esté en descarga
+			Optional<File> archivoOpt = Arrays.stream(carpeta.listFiles()).filter(f -> f.isFile() && f.getName().toLowerCase().endsWith(tipoArchivo.toLowerCase()) && !f.getName().endsWith(".crdownload")).max(Comparator.comparingLong(File::lastModified));
 
 			if (archivoOpt.isPresent()) {
 				archivoFinal = archivoOpt.get();
@@ -1235,14 +1309,14 @@ public class SeleniumBase {
 
 		if (archivoFinal != null) {
 			String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
-			File nuevoArchivo = new File(carpetaDescargas + "\\" + nombreBase + "_" + timestamp + ".pdf");
+			File nuevoArchivo = new File(carpetaDescargas + "\\" + nombreBase + "_" + timestamp + tipoArchivo);
 			if (archivoFinal.renameTo(nuevoArchivo)) {
 				System.out.println("Archivo renombrado a: " + nuevoArchivo.getName());
 			} else {
 				System.out.println("No se pudo renombrar el archivo.");
 			}
 		} else {
-			System.out.println("No se encontró un PDF descargado en el tiempo límite.");
+			System.out.println("No se encontró un archivo " + tipoArchivo + " descargado en el tiempo límite.");
 		}
 	}
 

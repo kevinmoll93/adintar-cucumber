@@ -22,7 +22,7 @@ public class ConsultaNovedades extends SeleniumBase {
 
 	private final By btnGenerarReporte = By.xpath("//input[@id='ctl00_cmdGenerar']");
 
-	private final By btnGuardarPDF = By.xpath("//a");
+	private final By lnkDescarga = By.xpath("/html");
 
 	/**
 	 * Constructor que inicializa el driver de Selenium.
@@ -61,8 +61,6 @@ public class ConsultaNovedades extends SeleniumBase {
 
 	public void seleccionarNovedadTipo(String pTipo) {
 		escribir(lnkNovedadTipo, pTipo);
-		//String lstNovedadTipo = ("//div[@id='ctl00_ContentFiltros_cmbTipNov_DropDown']//li");
-		//seleccionarOpcionConTexto(lstNovedadTipo, pTipo);
 	}
 
 	public void ingresarFechaAltaDesde(String pFechaDesde) {
@@ -114,7 +112,12 @@ public class ConsultaNovedades extends SeleniumBase {
 	}
 
 	public void guardarPDF(String pPDF) {
-		descargarArchivoNoSeguro();
-		renombrarArchivoPDF(pPDF, "C:\\Temp", 50);
+		descargarArchivoNoSeguro(60, "C:\\Temp");
+		renombrarArchivo(pPDF, "C:\\Temp", ".pdf", 50);
+	}
+
+	public void guardarExcel(String pExcel) {
+		descargarArchivoNoSeguro(60, "C:\\Temp");
+		renombrarArchivo(pExcel, "C:\\Temp", ".xls", 50);
 	}
 }
