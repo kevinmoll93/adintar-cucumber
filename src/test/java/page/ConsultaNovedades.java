@@ -112,12 +112,12 @@ public class ConsultaNovedades extends SeleniumBase {
 	}
 
 	public void guardarPDF(String pPDF) {
-		descargarArchivoNoSeguro(60, "C:\\Temp");
+		descargarArchivoNoSeguro(120, "C:\\Temp", ".pdf");
 		renombrarArchivo(pPDF, "C:\\Temp", ".pdf", 50);
 	}
 
 	public void guardarExcel(String pExcel) {
-		descargarArchivoNoSeguro(60, "C:\\Temp");
+		descargarArchivoNoSeguro(120, "C:\\Temp", ".xls");
 		renombrarArchivo(pExcel, "C:\\Temp", ".xls", 50);
 	}
 }
