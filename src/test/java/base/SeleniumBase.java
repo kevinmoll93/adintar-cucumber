@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 /**
@@ -80,6 +81,16 @@ public class SeleniumBase {
 		logger.info("Esperando hasta que al menos un elemento esté visible: {}", localizador);
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(TIEMPO_ESPERA));
 		return wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(localizador));
+	}
+
+	protected boolean esperarHastaElementoVisible(By localizador, int tiempoMaximoSeg) {
+		try {
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(tiempoMaximoSeg));
+			wait.until(ExpectedConditions.visibilityOfElementLocated(localizador));
+			return true;
+		} catch (TimeoutException e) {
+			return false;
+		}
 	}
 
 	private void desplazarAlElemento(WebElement elemento) {
@@ -318,11 +329,29 @@ public class SeleniumBase {
 	 * @return true si se logró hacer clic, false si no.
 	 */
 	protected boolean intentarClick(By localizador) {
-		if (existeClickeable(localizador)) {
-			clickear(localizador);
+		try {
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+			WebElement elemento = wait.until(ExpectedConditions.elementToBeClickable(localizador));
+
+			// Desplazar al elemento para evitar problemas de visibilidad
+			((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", elemento);
+			Thread.sleep(200); // pequeña pausa para estabilizar el scroll
+
+			try {
+				elemento.click();
+			} catch (Exception e) {
+				// Si el click normal falla, intentamos con JavaScript
+				((JavascriptExecutor) driver).executeScript("arguments[0].click();", elemento);
+			}
+
 			return true;
+		} catch (TimeoutException e) {
+			logger.warn("No se encontró elemento clickeable: {}", localizador);
+			return false;
+		} catch (Exception e) {
+			logger.error("Error al intentar click en {}: {}", localizador, e.getMessage());
+			return false;
 		}
-		return false;
 	}
 
 	/**
@@ -824,7 +853,7 @@ public class SeleniumBase {
 		}
 	}
 
-	private void esperar(int milisegundos) {
+	protected void esperar(int milisegundos) {
 		try {
 			Thread.sleep(milisegundos);
 		} catch (InterruptedException e) {
@@ -1164,94 +1193,131 @@ public class SeleniumBase {
 	 * Descarga un archivo marcado como "no seguro" desde el gestor de descargas de Chrome.
 	 * Utiliza Robot para abrir el historial y Selenium para interactuar con el Shadow DOM.
 	 */
-	protected void descargarArchivoNoSeguro(int tiempoMaximoSeg, String carpetaDescargas) {
-		String handleOriginal = driver.getWindowHandle(); // Guardamos pestaña original
+	protected void descargarArchivoNoSeguro(int tiempoMaximoSeg, String carpetaDescargas, String tipoArchivoEsperado) {
+		String handleOriginal = driver.getWindowHandle();
+		Set<String> handlesAntes = new HashSet<>(driver.getWindowHandles());
+
 		try {
 			Robot robot = new Robot();
 			robot.setAutoDelay(400);
 
-			// Guardar handles existentes antes de abrir gestor
-			Set<String> handlesAntes = driver.getWindowHandles();
-
-			// Paso 1: Abrir historial de descargas con Ctrl + J
+			// ---- Abrir historial de descargas ----
 			robot.keyPress(KeyEvent.VK_CONTROL);
 			robot.keyPress(KeyEvent.VK_J);
 			robot.keyRelease(KeyEvent.VK_J);
 			robot.keyRelease(KeyEvent.VK_CONTROL);
 
-			// Paso 2: Esperar a que aparezca un handle nuevo
+			// ---- Esperar nuevo handle (pestaña del gestor) ----
 			String handleGestor = esperarHastaObtenerHandleNuevo(handlesAntes, tiempoMaximoSeg);
-			if (handleGestor == null) {
-				throw new RuntimeException("No se abrió el gestor de descargas.");
-			}
+			if (handleGestor == null) throw new RuntimeException("No se abrió la pestaña del gestor de descargas.");
 
-			// Paso 3: Cambiar a la pestaña del gestor de descargas
+			// Cambiar a la pestaña del gestor
 			driver.switchTo().window(handleGestor);
 
-			// Paso 4: Esperar a que cargue el gestor
+			// ---- Esperar que el downloads-manager esté presente ----
 			boolean gestorVisible = esperarHasta(() -> driver.findElements(By.tagName("downloads-manager")).size() > 0, tiempoMaximoSeg);
 			if (!gestorVisible) throw new RuntimeException("No se cargó el gestor de descargas.");
 
-			// Paso 5: Acceder al Shadow DOM
+			// Acceder al shadow root del downloads-manager
 			WebElement downloadsManager = driver.findElement(By.tagName("downloads-manager"));
 			SearchContext shadowRoot1 = (SearchContext) ((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot", downloadsManager);
 
-			// Esperar a que aparezca el primer "downloads-item"
+			// ---- Esperar a que aparezca al menos un downloads-item ----
 			boolean itemVisible = esperarHasta(() -> shadowRoot1.findElements(By.cssSelector("downloads-item")).size() > 0, tiempoMaximoSeg);
+			if (!itemVisible) throw new RuntimeException("No apareció ningún elemento de descarga en el gestor.");
 
-			if (!itemVisible) {
-				throw new RuntimeException("No se encontró ningún elemento de descarga en el gestor.");
-			}
+			// Capturamos listado previo de archivos para detectar el nuevo
+			File carpeta = new File(carpetaDescargas);
+			Set<String> archivosAntes = carpeta.exists() && carpeta.isDirectory() ? Arrays.stream(Optional.ofNullable(carpeta.listFiles()).orElse(new File[0])).map(File::getName).collect(Collectors.toSet()) : Collections.emptySet();
 
-			WebElement itemsList = shadowRoot1.findElement(By.cssSelector("downloads-item"));
-			SearchContext shadowRoot2 = (SearchContext) ((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot", itemsList);
+			long tStart = System.currentTimeMillis();
 
-			// Paso 6: Click en los 3 puntitos
+			// Obtener primer downloads-item y su shadow root
+			WebElement firstItem = shadowRoot1.findElement(By.cssSelector("downloads-item"));
+			SearchContext shadowRoot2 = (SearchContext) ((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot", firstItem);
+
+			// ---- Abrir menú de acciones (3 puntitos) ----
 			WebElement menuButton = shadowRoot2.findElement(By.cssSelector("#more-actions"));
 			menuButton.click();
 
-			// Paso 7: Click en "Descargar archivo no seguro"
+			// ---- Click en "save dangerous" (Descargar archivo no seguro) ----
+			boolean botonVisible = esperarHasta(() -> shadowRoot2.findElements(By.cssSelector("#save-dangerous")).size() > 0, Math.min(tiempoMaximoSeg, 10));
+			if (!botonVisible) throw new RuntimeException("No apareció el botón para 'Descargar archivo no seguro'.");
+
 			WebElement btnDescargar = shadowRoot2.findElement(By.cssSelector("#save-dangerous"));
 			btnDescargar.click();
-			esperar(1000);
 
-			System.out.println("Descarga de archivo no seguro confirmada.");
+			esperar(2000);
 
-			// Paso 8: Esperar que finalice la descarga
-			boolean descargaCompleta = esperarHasta(() -> {
-				File carpeta = new File(carpetaDescargas);
-				File[] enDescarga = carpeta.listFiles((dir, name) -> name.endsWith(".crdownload"));
-				return enDescarga == null || enDescarga.length == 0;
+			System.out.println("Acción de descarga (archivo no seguro) enviada. Esperando que el archivo aparezca y finalice...");
+
+			// ---- Esperar que aparezca en carpeta un archivo nuevo y que NO esté en .crdownload ----
+			boolean descargado = esperarHasta(() -> {
+				File[] lista = Optional.ofNullable(carpeta.listFiles()).orElse(new File[0]);
+				for (File f : lista) {
+					String name = f.getName();
+					if (archivosAntes.contains(name)) continue;            // no es nuevo
+					if (name.endsWith(".crdownload")) return false;       // todavía en progreso
+					if (tipoArchivoEsperado == null || tipoArchivoEsperado.isEmpty()) {
+						// cualquier archivo nuevo sirve
+						return f.lastModified() >= tStart - 5000;
+					} else {
+						if (name.toLowerCase().endsWith(tipoArchivoEsperado.toLowerCase()) && f.lastModified() >= tStart - 5000) {
+							return true;
+						}
+					}
+				}
+				return false;
 			}, tiempoMaximoSeg);
 
-			if (!descargaCompleta) {
-				System.err.println("Advertencia: La descarga no terminó antes del tiempo máximo.");
+			if (!descargado) {
+				System.err.println("Advertencia: no se detectó el archivo finalizado dentro del timeout.");
 			} else {
-				System.out.println("Descarga completada.");
+				System.out.println("Archivo detectado y finalizado en la carpeta de descargas.");
 			}
 
-			// Paso 9: Cerrar la pestaña del gestor y volver a la original
-			driver.close();
-			driver.switchTo().window(handleOriginal);
+			// ---- Cerrar pestaña del gestor y volver a la original ----
+			try {
+				driver.close(); // cierra la pestaña del gestor
+			} catch (Exception e) {
+				System.err.println("Warning: no se pudo cerrar la pestaña del gestor: " + e.getMessage());
+			}
+
+			// Si la original sigue presente, volver a ella; sino, cambiar a una pestaña disponible
+			Set<String> handlesNow = driver.getWindowHandles();
+			if (handlesNow.contains(handleOriginal)) {
+				driver.switchTo().window(handleOriginal);
+			} else if (!handlesNow.isEmpty()) {
+				driver.switchTo().window(handlesNow.iterator().next());
+			} else {
+				System.err.println("No hay ventanas abiertas para volver.");
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.err.println("Error durante la descarga del archivo no seguro: " + e.getMessage());
+			System.err.println("Error en descargarArchivoNoSeguroConVerificacion: " + e.getMessage());
+			// Intentamos volver a la original en cualquier caso
 			try {
-				driver.switchTo().window(handleOriginal);
+				if (driver != null && handleOriginal != null && driver.getWindowHandles().contains(handleOriginal)) {
+					driver.switchTo().window(handleOriginal);
+				} else if (driver != null && !driver.getWindowHandles().isEmpty()) {
+					driver.switchTo().window(driver.getWindowHandles().iterator().next());
+				}
 			} catch (Exception ignored) {
 			}
 		}
 	}
 
-	// Espera a que aparezca un nuevo handle (pestaña) y lo devuelve
-	private String esperarHastaObtenerHandleNuevo(Set<String> handlesAntes, int tiempoMaximoSeg) {
+	protected String esperarHastaObtenerHandleNuevo(Set<String> handlesAntes, int tiempoMaximoSeg) {
 		long inicio = System.currentTimeMillis();
 		while (System.currentTimeMillis() - inicio < tiempoMaximoSeg * 1000) {
-			Set<String> handlesAhora = driver.getWindowHandles();
-			handlesAhora.removeAll(handlesAntes);
-			if (!handlesAhora.isEmpty()) {
-				return handlesAhora.iterator().next();
+			Set<String> ahora = driver.getWindowHandles();
+			// calcular diferencia
+			Set<String> copia = new HashSet<>(ahora);
+			copia.removeAll(handlesAntes);
+			if (!copia.isEmpty()) {
+				// devolvemos el handle nuevo (si hay varios, devolvemos el primero)
+				return copia.iterator().next();
 			}
 			try {
 				Thread.sleep(300);
@@ -1261,7 +1327,6 @@ public class SeleniumBase {
 		return null;
 	}
 
-	// Espera condicional
 	private boolean esperarHasta(Supplier<Boolean> condicion, int tiempoMaximoSeg) {
 		long inicio = System.currentTimeMillis();
 		while (System.currentTimeMillis() - inicio < tiempoMaximoSeg * 1000) {
