@@ -16,8 +16,11 @@ public class Home extends SeleniumBase {
 	private final By lnkCuentas = By.xpath("//a[@id='MenuIzquierdot0']");
 	private final By lnkConsultas = By.xpath("//a[@id='MenuIzquierdot1']");
 	private final By lnkConsultaCuentas = By.xpath("//a[@id='ListaProgt0']");
-	private final By lnkListados = By.xpath("//a[@id='MenuIzquierdot2']");
+	private final By lnkCuentasListados = By.xpath("//a[@id='MenuIzquierdot2']");
 	private final By lnkConsultaNovedades = By.xpath("//a[@id='ListaProgt1']");
+	private final By lnkStockTarjetaSucursal = By.xpath("//a[@id='MenuIzquierdot17']");
+	private final By lnkStockListados = By.xpath("//a[@id='MenuIzquierdot18']");
+	private final By lnkListadoStockTCSucursal = By.xpath("//a[@id='ListaProgt0']");
 
 
 	/**
@@ -62,10 +65,22 @@ public class Home extends SeleniumBase {
 	}
 
 	public void clickCuentasListados() {
-		clickear(lnkListados);
+		clickear(lnkCuentasListados);
 	}
 
 	public void clickConsultaNovedades() {
 		clickear(lnkConsultaNovedades);
+	}
+
+	public void clickStockTarjetasSucursal() {
+		clickear(lnkStockTarjetaSucursal);
+	}
+
+	public void clickStockListados() {
+		clickear(lnkStockListados);
+	}
+
+	public void clickListadoStockSucursal() {
+		clickear(lnkListadoStockTCSucursal);
 	}
 }

@@ -43,7 +43,7 @@ public class LogOut extends SeleniumBase {
 			driver.switchTo().window(handleMenu);
 
 			// Hacés click final en Salir
-			if (!reintentarClick(btnSalir, 3, 1000)) {
+			if (!reintentarClick(btnSalir, 4, 1000)) {
 				throw new RuntimeException("No se pudo hacer click final en 'Salir' en pestaña menú");
 			}
 
