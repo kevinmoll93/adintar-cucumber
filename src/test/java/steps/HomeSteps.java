@@ -24,4 +24,13 @@ public class HomeSteps {
 		home.clickCuentasListados();
 		home.clickConsultaNovedades();
 	}
+
+	@Given("el usuario accede a la listado de stock TC sucursal")
+	public void elUsuarioAccedeALaListadoDeStockTCSucursal() {
+		driver.get(Config.urlPrincipal);
+		home.clickStockTarjetasSucursal();
+		home.clickStockListados();
+		home.clickListadoStockSucursal();
+		
+	}
 }
