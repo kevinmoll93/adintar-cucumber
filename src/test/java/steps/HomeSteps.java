@@ -31,6 +31,46 @@ public class HomeSteps {
 		home.clickStockTarjetasSucursal();
 		home.clickStockListados();
 		home.clickListadoStockSucursal();
-		
+
+	}
+
+	@Given("el usuario accede al ABM Clientes")
+	public void ABMClientes() {
+		driver.get(Config.urlPrincipal);
+		home.clickSolicitudes();
+		home.clickABM();
+		home.clickABMClientes();
+	}
+
+	@Given("el usuario accede al ABM Solicitudes Adicionales")
+	public void ABMSolicitudesAdicionales() {
+		driver.get(Config.urlPrincipal);
+		home.clickSolicitudes();
+		home.clickABM();
+		home.clickABMSolicitudesAdicionales();
+	}
+
+	@Given("el usuario accede al ABM Solicitudes Individuales")
+	public void ABMSolicitudesIndividuales() {
+		driver.get(Config.urlPrincipal);
+		home.clickSolicitudes();
+		home.clickABM();
+		home.clickABMSolicitudesIndividuales();
+	}
+
+	@Given("el usuario accede al Listado de Rechazos de Altas por servicios")
+	public void ListadosRechazosAltaServicios() {
+		driver.get(Config.urlPrincipal);
+		home.clickSolicitudes();
+		home.clickListados();
+		home.clickListadoRechazosAltaServicio();
+	}
+
+	@Given("el usuario accede a la Entrega de Adicionales dadas de alta por Call Center")
+	public void TareasEntregaAdicionales() {
+		driver.get(Config.urlPrincipal);
+		home.clickSolicitudes();
+		home.clickTareas();
+		home.clickEntregaAdicionales();
 	}
 }
