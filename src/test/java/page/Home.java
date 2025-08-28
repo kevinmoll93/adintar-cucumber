@@ -18,9 +18,20 @@ public class Home extends SeleniumBase {
 	private final By lnkConsultaCuentas = By.xpath("//a[@id='ListaProgt0']");
 	private final By lnkCuentasListados = By.xpath("//a[@id='MenuIzquierdot2']");
 	private final By lnkConsultaNovedades = By.xpath("//a[@id='ListaProgt1']");
+
 	private final By lnkStockTarjetaSucursal = By.xpath("//a[@id='MenuIzquierdot17']");
 	private final By lnkStockListados = By.xpath("//a[@id='MenuIzquierdot18']");
 	private final By lnkListadoStockTCSucursal = By.xpath("//a[@id='ListaProgt0']");
+
+	private final By lnkSolicitudes = By.xpath("//a[@id='MenuIzquierdot13']");
+	private final By lnkABM = By.xpath("//a[@id='MenuIzquierdot14']");
+	private final By lnkListados = By.xpath("//a[@id='MenuIzquierdot15']");
+	private final By lnkTareas = By.xpath("//a[@id='MenuIzquierdot16']");
+	private final By lnkABMClientes = By.xpath("//a[@id='ListaProgt0']");
+	private final By lnkABMSolicitudesAdicionales = By.xpath("//a[@id='ListaProgt1']");
+	private final By lnkABMSolicitudesIndividuales = By.xpath("//a[@id='ListaProgt2']");
+	private final By lnkListadoRechazosAltasServicios = By.xpath("//a[@id='ListaProgt0']");
+	private final By lnkEntregaAdicionales = By.xpath("//a[@id='ListaProgt0']");
 
 
 	/**
@@ -82,5 +93,41 @@ public class Home extends SeleniumBase {
 
 	public void clickListadoStockSucursal() {
 		clickear(lnkListadoStockTCSucursal);
+	}
+
+	public void clickSolicitudes() {
+		clickear(lnkSolicitudes);
+	}
+
+	public void clickABM() {
+		clickear(lnkABM);
+	}
+
+	public void clickABMClientes() {
+		clickear(lnkABMClientes);
+	}
+
+	public void clickABMSolicitudesAdicionales() {
+		clickear(lnkABMSolicitudesAdicionales);
+	}
+
+	public void clickABMSolicitudesIndividuales() {
+		clickear(lnkABMSolicitudesIndividuales);
+	}
+
+	public void clickListados() {
+		clickear(lnkListados);
+	}
+
+	public void clickListadoRechazosAltaServicio() {
+		clickear(lnkListadoRechazosAltasServicios);
+	}
+
+	public void clickTareas() {
+		clickear(lnkTareas);
+	}
+
+	public void clickEntregaAdicionales() {
+		clickear(lnkEntregaAdicionales);
 	}
 }
