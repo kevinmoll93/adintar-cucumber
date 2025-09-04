@@ -4,7 +4,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.WebDriver;
-import page.ConsultaNovedades;
 import page.ListadoStockSucursal;
 
 public class ListadoStockSucursalSteps {
@@ -31,5 +30,20 @@ public class ListadoStockSucursalSteps {
 	@And("ingresa las Fechas Recepcion desde {string} y hasta {string}")
 	public void ingresaLasFechasRecepcionDesdeYHasta(String desde, String hasta) {
 		listadostock.ingresarFechaRecepcion(desde, hasta);
+	}
+
+	@And("selecciona el Origen {string}")
+	public void seleccionaElOrigen(String origen) {
+		listadostock.seleccionarOrigen(origen);
+	}
+
+	@And("selecciona el archivo origen {string}")
+	public void seleccionaElArchivoOrigen(String archivo) {
+		listadostock.seleccionarArchivoOrigen(archivo);
+	}
+
+	@And("selecciona la sucursal origen {string}")
+	public void seleccionaLaSucursalOrigen(String sucursal) {
+		listadostock.seleccionarSucursalOrigen(sucursal);
 	}
 }
