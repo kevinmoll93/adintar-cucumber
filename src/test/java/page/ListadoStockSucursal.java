@@ -3,6 +3,7 @@ package page;
 import base.SeleniumBase;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 public class ListadoStockSucursal extends SeleniumBase {
 	private final By rbtFormatoPDF = By.xpath("//input[@id='ctl00_optPDF']");
@@ -63,9 +64,27 @@ public class ListadoStockSucursal extends SeleniumBase {
 	}
 
 	public void seleccionarTipoAccion(String pAccion) {
-		clickear(lnkTipoAccion);
-		String lstTipoAccion = ("//div[@id='ctl00_ContentFiltros_cboAccion_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstTipoAccion, pAccion);
+		try {
+			WebElement combo = driver.findElement(lnkTipoAccion);
+
+			// Validar si tiene el atributo "disabled"
+			String disabledAttr = combo.getAttribute("disabled");
+
+			if (disabledAttr == null) {
+				// Combo habilitado
+				clickear(lnkTipoAccion);
+
+				String lstTipoAccion = String.format("//div[@id='ctl00_ContentFiltros_cboAccion_DropDown']//li[contains(text(),'%s')]", pAccion);
+
+				seleccionarOpcionConTexto(lstTipoAccion, pAccion);
+				System.out.println("tipo de Accion seleccionada: " + pAccion);
+			} else {
+				// Combo deshabilitado
+				System.out.println("El select de tipo de Accion está deshabilitado. Se omite selección.");
+			}
+		} catch (Exception e) {
+			System.err.println("Error al seleccionar tipo de Accion: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarOrigen(String pOrigen) {
@@ -91,15 +110,51 @@ public class ListadoStockSucursal extends SeleniumBase {
 	}
 
 	public void seleccionarArchivoOrigen(String pArchivo) {
-		clickear(lnkArchivoOrigen);
-		String lstArchivoOrigen = ("//div[@id='ctl00_ContentFiltros_cboArchivo_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstArchivoOrigen, pArchivo);
+		try {
+			WebElement combo = driver.findElement(lnkArchivoOrigen);
+
+			// Validar si tiene el atributo "disabled"
+			String disabledAttr = combo.getAttribute("disabled");
+
+			if (disabledAttr == null) {
+				// Combo habilitado
+				clickear(lnkArchivoOrigen);
+
+				String lstArchivoOrigen = String.format("//div[@id='ctl00_ContentFiltros_cboArchivo_DropDown']//li[contains(text(),'%s')]", pArchivo);
+
+				seleccionarOpcionConTexto(lstArchivoOrigen, pArchivo);
+				System.out.println("Archivo origen seleccionada: " + pArchivo);
+			} else {
+				// Combo deshabilitado
+				System.out.println("El select de Archivo Origen está deshabilitado. Se omite selección.");
+			}
+		} catch (Exception e) {
+			System.err.println("Error al seleccionar Archivo origen: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarSucursalOrigen(String pOrigen) {
-		clickear(lnkSucursalOrigen);
-		String lstSucursalOrigen = ("//div[@id='ctl00_ContentFiltros_cboSucOrigen_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstSucursalOrigen, pOrigen);
+		try {
+			WebElement combo = driver.findElement(lnkSucursalOrigen);
+
+			// Validar si tiene el atributo "disabled"
+			String disabledAttr = combo.getAttribute("disabled");
+
+			if (disabledAttr == null) {
+				// Combo habilitado
+				clickear(lnkSucursalOrigen);
+
+				String lstSucursalOrigen = String.format("//div[@id='ctl00_ContentFiltros_cboSucOrigen_DropDown']//li[contains(text(),'%s')]", pOrigen);
+
+				seleccionarOpcionConTexto(lstSucursalOrigen, pOrigen);
+				System.out.println("Sucursal origen seleccionada: " + pOrigen);
+			} else {
+				// Combo deshabilitado
+				System.out.println("El select de Sucursal Origen está deshabilitado. Se omite selección.");
+			}
+		} catch (Exception e) {
+			System.err.println("Error al seleccionar sucursal origen: " + e.getMessage());
+		}
 	}
 
 	public void clickGenerarReporte() {
