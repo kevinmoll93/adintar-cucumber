@@ -109,7 +109,7 @@ public class RunReporte {
 
 			List<String> jsonFiles = Collections.singletonList(rutaJson);
 
-			Configuration configuration = new Configuration(reportOutputDirectory, "Proyecto BEPE");
+			Configuration configuration = new Configuration(reportOutputDirectory, "Proyecto Adintar");
 			configuration.addClassifications("Sistema Operativo", "Windows 10");
 			configuration.addClassifications("Navegador", "Chrome");
 			configuration.addClassifications("Ambiente", "Testing");
