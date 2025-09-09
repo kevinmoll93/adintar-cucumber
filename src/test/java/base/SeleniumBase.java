@@ -1356,7 +1356,7 @@ public class SeleniumBase {
 		long tiempoInicio = System.currentTimeMillis();
 		File archivoFinal = null;
 
-		while (System.currentTimeMillis() - tiempoInicio < tiempoMaximoSeg * 1000) {
+		while (System.currentTimeMillis() - tiempoInicio < tiempoMaximoSeg * 10000) {
 			// Buscar cualquier archivo del tipo especificado que no esté en descarga
 			Optional<File> archivoOpt = Arrays.stream(carpeta.listFiles()).filter(f -> f.isFile() && f.getName().toLowerCase().endsWith(tipoArchivo.toLowerCase()) && !f.getName().endsWith(".crdownload")).max(Comparator.comparingLong(File::lastModified));
 

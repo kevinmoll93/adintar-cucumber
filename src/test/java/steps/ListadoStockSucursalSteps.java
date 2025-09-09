@@ -46,4 +46,9 @@ public class ListadoStockSucursalSteps {
 	public void seleccionaLaSucursalOrigen(String sucursal) {
 		listadostock.seleccionarSucursalOrigen(sucursal);
 	}
+
+	@And("selecciona el tipo de Accion {string}")
+	public void seleccionaElTipoDeAccion(String accion) {
+		listadostock.seleccionarTipoAccion(accion);
+	}
 }
