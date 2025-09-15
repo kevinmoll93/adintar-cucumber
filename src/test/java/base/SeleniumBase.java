@@ -1433,4 +1433,12 @@ public class SeleniumBase {
 		}
 	}
 
+	public WebElement find(By locator) {
+		try {
+			return waitShort.until(ExpectedConditions.visibilityOfElementLocated(locator));
+		} catch (TimeoutException e) {
+			return null; // No encontró el elemento
+		}
+	}
+
 }
