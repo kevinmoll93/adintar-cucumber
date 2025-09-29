@@ -35,89 +35,135 @@ public class ConsultaNovedades extends SeleniumBase {
 
 	public void clickFormatoSalidaPDF() {
 		cambiarFocoNuevaPestania();
-		existe(rbtFormatoPDF);
-		clickear(rbtFormatoPDF);
+		if (existe(rbtFormatoPDF)) {
+			clickear(rbtFormatoPDF);
+		} else {
+			manejarErrorYCerrarNavegador("No se encontró el botón Formato PDF.");
+		}
 	}
 
 	public void clickFormatoSalidaExcel() {
 		cambiarFocoNuevaPestania();
-		existe(rbtFormatoExcel);
-		clickear(rbtFormatoExcel);
+		if (existe(rbtFormatoExcel)) {
+			clickear(rbtFormatoExcel);
+		} else {
+			manejarErrorYCerrarNavegador("No se encontró el botón Formato Excel.");
+		}
 	}
 
 	public void clickTipoReporteDetalles() {
-		clickear(rbtDetalle);
+		if (existe(rbtDetalle)) {
+			clickear(rbtDetalle);
+		} else {
+			manejarErrorYCerrarNavegador("No se encontró el botón Detalle.");
+		}
 	}
 
 	public void clickTipoReporteTotales() {
-		clickear(rbtTotales);
+		if (existe(rbtTotales)) {
+			clickear(rbtTotales);
+		} else {
+			manejarErrorYCerrarNavegador("No se encontró el botón Totales.");
+		}
 	}
 
 	public void seleccionarAdministradora(String pAdmin) {
-		clickear(lnkAdministradora);
-		String lstAdministradora = ("//div[@id='ctl00_ContentFiltros_cmbAdm_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstAdministradora, pAdmin);
+		try {
+			clickear(lnkAdministradora);
+			String lstAdministradora = "//div[@id='ctl00_ContentFiltros_cmbAdm_DropDown']//li[contains(text(),'%s')]";
+			seleccionarOpcionConTexto(String.format(lstAdministradora, pAdmin), pAdmin);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar administradora: " + pAdmin);
+		}
 	}
 
 	public void seleccionarNovedadTipo(String pTipo) {
-		escribir(lnkNovedadTipo, pTipo);
+		try {
+			escribir(lnkNovedadTipo, pTipo);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al escribir Novedad Tipo: " + pTipo);
+		}
 	}
 
 	public void ingresarFechaAltaDesde(String pFechaDesde) {
-		escribir(fldFechaAltaDesde, pFechaDesde);
+		try {
+			escribir(fldFechaAltaDesde, pFechaDesde);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al ingresar Fecha Alta Desde: " + pFechaDesde);
+		}
 	}
 
 	public void ingresarCuenta(String pCuenta) {
-		escribir(fldCuenta, pCuenta);
+		try {
+			escribir(fldCuenta, pCuenta);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al ingresar Cuenta: " + pCuenta);
+		}
 	}
 
 	public void seleccionarOrigen(String pOrigen) {
-		clickear(lnkOrigen);
-		String lstOrigen = ("//div[@id='ctl00_ContentFiltros_cmbOriNov_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstOrigen, pOrigen);
+		try {
+			clickear(lnkOrigen);
+			String lstOrigen = "//div[@id='ctl00_ContentFiltros_cmbOriNov_DropDown']//li[contains(text(),'%s')]";
+			seleccionarOpcionConTexto(String.format(lstOrigen, pOrigen), pOrigen);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar Origen: " + pOrigen);
+		}
 	}
 
 	public void seleccionarEstado(String pEstado) {
-		clickear(lnkEstado);
-		String lstEstado = ("//div[@id='ctl00_ContentFiltros_cmbEstNov_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstEstado, pEstado);
+		try {
+			clickear(lnkEstado);
+			String lstEstado = "//div[@id='ctl00_ContentFiltros_cmbEstNov_DropDown']//li[contains(text(),'%s')]";
+			seleccionarOpcionConTexto(String.format(lstEstado, pEstado), pEstado);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar Estado: " + pEstado);
+		}
 	}
 
 	public void ingresarFechaAltaHasta(String pFechaHasta) {
-		escribir(fldFechaAltaHasta, pFechaHasta);
+		try {
+			escribir(fldFechaAltaHasta, pFechaHasta);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al ingresar Fecha Alta Hasta: " + pFechaHasta);
+		}
 	}
 
 	public void clickGenerarReporte() {
-		clickear(btnGenerarReporte);
+		if (existe(btnGenerarReporte)) {
+			clickear(btnGenerarReporte);
+		} else {
+			manejarErrorYCerrarNavegador("No se encontró el botón Generar Reporte.");
+		}
 	}
 
 	public void clickBotonAbrirDentroIframe() {
 		try {
-			// Cambiar al iframe
 			driver.switchTo().frame("ctl00_framePDF");
-
-			// Ahora sí buscar y hacer click
 			WebElement botonAbrir = driver.findElement(By.id("open-button"));
 			botonAbrir.click();
-
 			System.out.println("Botón 'Abrir' clickeado correctamente dentro del iframe.");
-
-			// Volver al contenido principal
-			driver.switchTo().defaultContent();
-
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Error al hacer click en 'Abrir': " + e.getMessage());
+			manejarErrorYCerrarNavegador("Error al hacer click en 'Abrir' dentro del iframe: " + e.getMessage());
+		} finally {
+			driver.switchTo().defaultContent();
 		}
 	}
 
 	public void guardarPDF(String pPDF) {
-		descargarArchivoNoSeguro(120, "C:\\Temp", ".pdf");
-		renombrarArchivo(pPDF, "C:\\Temp", ".pdf", 50);
+		guardarArchivoComun(pPDF, ".pdf");
 	}
 
 	public void guardarExcel(String pExcel) {
-		descargarArchivoNoSeguro(120, "C:\\Temp", ".xls");
-		renombrarArchivo(pExcel, "C:\\Temp", ".xls", 50);
+		guardarArchivoComun(pExcel, ".xls");
+	}
+
+	private void guardarArchivoComun(String nombreArchivo, String extension) {
+		try {
+			descargarArchivoNoSeguro(120, "C:\\Temp", extension);
+			renombrarArchivo(nombreArchivo, "C:\\Temp", extension, 50);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al guardar archivo " + extension + ": " + e.getMessage());
+		}
 	}
 }

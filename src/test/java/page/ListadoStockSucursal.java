@@ -36,128 +36,162 @@ public class ListadoStockSucursal extends SeleniumBase {
 	}
 
 	public void clickFormatoPDF() {
-		cambiarFocoNuevaPestania();
-		clickear(rbtFormatoPDF);
+		try {
+			cambiarFocoNuevaPestania();
+			existe(rbtFormatoPDF);
+			clickear(rbtFormatoPDF);
+			System.out.println("Formato de salida PDF seleccionado correctamente.");
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar formato PDF: " + e.getMessage());
+		}
 	}
 
 	public void clickFormatoExcel() {
-		cambiarFocoNuevaPestania();
-		clickear(rbtFormatoExcel);
+		try {
+			cambiarFocoNuevaPestania();
+			existe(rbtFormatoExcel);
+			clickear(rbtFormatoExcel);
+			System.out.println("Formato de salida Excel seleccionado correctamente.");
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar formato Excel: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarTipolistado(String pTipo) {
-		clickear(lnkTipoListado);
-		String lstTipoListado = ("//div[@id='ctl00_ContentFiltros_cboListado_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstTipoListado, pTipo);
+		try {
+			clickear(lnkTipoListado);
+			String lstTipoListado = String.format("//div[@id='ctl00_ContentFiltros_cboListado_DropDown']//li[contains(text(),'%s')]", pTipo);
+			seleccionarOpcionConTexto(lstTipoListado, pTipo);
+			System.out.println("Tipo de listado seleccionado: " + pTipo);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar tipo de listado: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarSucursal(String pSucursal) {
-		clickear(lnkSucursal);
-		String lstSucursal = ("//div[@id='ctl00_ContentFiltros_cboSucursal_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstSucursal, pSucursal);
+		try {
+			clickear(lnkSucursal);
+			String lstSucursal = String.format("//div[@id='ctl00_ContentFiltros_cboSucursal_DropDown']//li[contains(text(),'%s')]", pSucursal);
+			seleccionarOpcionConTexto(lstSucursal, pSucursal);
+			System.out.println("Sucursal seleccionada: " + pSucursal);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar sucursal: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarAdministradora(String pAdministradora) {
-		clickear(lnkAdministradora);
-		String lstAdministradora = ("//div[@id='ctl00_ContentFiltros_cboAdmininstradora_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstAdministradora, pAdministradora);
+		try {
+			clickear(lnkAdministradora);
+			String lstAdministradora = String.format("//div[@id='ctl00_ContentFiltros_cboAdmininstradora_DropDown']//li[contains(text(),'%s')]", pAdministradora);
+			seleccionarOpcionConTexto(lstAdministradora, pAdministradora);
+			System.out.println("Administradora seleccionada: " + pAdministradora);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar administradora: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarTipoAccion(String pAccion) {
 		try {
 			WebElement combo = driver.findElement(lnkTipoAccion);
-
-			// Validar si tiene el atributo "disabled"
 			String disabledAttr = combo.getAttribute("disabled");
 
 			if (disabledAttr == null) {
-				// Combo habilitado
 				clickear(lnkTipoAccion);
-
 				String lstTipoAccion = String.format("//div[@id='ctl00_ContentFiltros_cboAccion_DropDown']//li[contains(text(),'%s')]", pAccion);
-
 				seleccionarOpcionConTexto(lstTipoAccion, pAccion);
-				System.out.println("tipo de Accion seleccionada: " + pAccion);
+				System.out.println("Tipo de acción seleccionado: " + pAccion);
 			} else {
-				// Combo deshabilitado
-				System.out.println("El select de tipo de Accion está deshabilitado. Se omite selección.");
+				System.out.println("El select de Tipo de Acción está deshabilitado. Se omite selección.");
 			}
 		} catch (Exception e) {
-			System.err.println("Error al seleccionar tipo de Accion: " + e.getMessage());
+			manejarErrorYCerrarNavegador("Error al seleccionar tipo de acción: " + e.getMessage());
 		}
 	}
 
 	public void seleccionarOrigen(String pOrigen) {
-		clickear(lnkOrigen);
-		String lstOrigen = ("//div[@id='ctl00_ContentFiltros_cboOrigen_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstOrigen, pOrigen);
+		try {
+			clickear(lnkOrigen);
+			String lstOrigen = String.format("//div[@id='ctl00_ContentFiltros_cboOrigen_DropDown']//li[contains(text(),'%s')]", pOrigen);
+			seleccionarOpcionConTexto(lstOrigen, pOrigen);
+			System.out.println("Origen seleccionado: " + pOrigen);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar origen: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarEstado(String pEstado) {
-		clickear(lnkEstado);
-		String lstEstado = ("//div[@id='ctl00_ContentFiltros_cboEstado_DropDown']//li[contains(text(),'%s')]");
-		seleccionarOpcionConTexto(lstEstado, pEstado);
+		try {
+			clickear(lnkEstado);
+			String lstEstado = String.format("//div[@id='ctl00_ContentFiltros_cboEstado_DropDown']//li[contains(text(),'%s')]", pEstado);
+			seleccionarOpcionConTexto(lstEstado, pEstado);
+			System.out.println("Estado seleccionado: " + pEstado);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al seleccionar estado: " + e.getMessage());
+		}
 	}
 
 	public void ingresarFechaEstado(String pFechaDesde, String pFechaHasta) {
-		escribir(clnFechaEstadoDesde, pFechaDesde);
-		escribir(clnFechaEstadoHasta, pFechaHasta);
+		try {
+			escribir(clnFechaEstadoDesde, pFechaDesde);
+			escribir(clnFechaEstadoHasta, pFechaHasta);
+			System.out.println("Fechas de estado ingresadas: Desde " + pFechaDesde + " Hasta " + pFechaHasta);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al ingresar fechas de estado: " + e.getMessage());
+		}
 	}
 
 	public void ingresarFechaRecepcion(String pFechaDesde, String pFechaHasta) {
-		escribir(clnFechaRecepcionDesde, pFechaDesde);
-		escribir(clnFechaRecepcionHasta, pFechaHasta);
+		try {
+			escribir(clnFechaRecepcionDesde, pFechaDesde);
+			escribir(clnFechaRecepcionHasta, pFechaHasta);
+			System.out.println("Fechas de recepción ingresadas: Desde " + pFechaDesde + " Hasta " + pFechaHasta);
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al ingresar fechas de recepción: " + e.getMessage());
+		}
 	}
 
 	public void seleccionarArchivoOrigen(String pArchivo) {
 		try {
 			WebElement combo = driver.findElement(lnkArchivoOrigen);
-
-			// Validar si tiene el atributo "disabled"
 			String disabledAttr = combo.getAttribute("disabled");
 
 			if (disabledAttr == null) {
-				// Combo habilitado
 				clickear(lnkArchivoOrigen);
-
 				String lstArchivoOrigen = String.format("//div[@id='ctl00_ContentFiltros_cboArchivo_DropDown']//li[contains(text(),'%s')]", pArchivo);
-
 				seleccionarOpcionConTexto(lstArchivoOrigen, pArchivo);
-				System.out.println("Archivo origen seleccionada: " + pArchivo);
+				System.out.println("Archivo origen seleccionado: " + pArchivo);
 			} else {
-				// Combo deshabilitado
 				System.out.println("El select de Archivo Origen está deshabilitado. Se omite selección.");
 			}
 		} catch (Exception e) {
-			System.err.println("Error al seleccionar Archivo origen: " + e.getMessage());
+			manejarErrorYCerrarNavegador("Error al seleccionar archivo origen: " + e.getMessage());
 		}
 	}
 
 	public void seleccionarSucursalOrigen(String pOrigen) {
 		try {
 			WebElement combo = driver.findElement(lnkSucursalOrigen);
-
-			// Validar si tiene el atributo "disabled"
 			String disabledAttr = combo.getAttribute("disabled");
 
 			if (disabledAttr == null) {
-				// Combo habilitado
 				clickear(lnkSucursalOrigen);
-
 				String lstSucursalOrigen = String.format("//div[@id='ctl00_ContentFiltros_cboSucOrigen_DropDown']//li[contains(text(),'%s')]", pOrigen);
-
 				seleccionarOpcionConTexto(lstSucursalOrigen, pOrigen);
 				System.out.println("Sucursal origen seleccionada: " + pOrigen);
 			} else {
-				// Combo deshabilitado
 				System.out.println("El select de Sucursal Origen está deshabilitado. Se omite selección.");
 			}
 		} catch (Exception e) {
-			System.err.println("Error al seleccionar sucursal origen: " + e.getMessage());
+			manejarErrorYCerrarNavegador("Error al seleccionar sucursal origen: " + e.getMessage());
 		}
 	}
 
 	public void clickGenerarReporte() {
-		clickear(btnGenerarReporte);
+		try {
+			clickear(btnGenerarReporte);
+			System.out.println("Botón 'Generar Reporte' clickeado correctamente.");
+		} catch (Exception e) {
+			manejarErrorYCerrarNavegador("Error al hacer click en Generar Reporte: " + e.getMessage());
+		}
 	}
 }
