@@ -12,7 +12,7 @@ Feature: Permite realizar una consulta de cuenta con diferentes filtros
 	Then deberia ver el texto de cierre exitoso
 	Examples:
 	  | NumeroCUIT    |
-	  | 20-20606955-5 |
+	  | 20-20606955-6 |
 
   Scenario Outline: Consultar cuenta ingresada por numero de cuenta Nexos
 	Given el usuario accede a la consulta de Cuentas

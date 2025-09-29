@@ -4,6 +4,9 @@ import base.SeleniumBase;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
 
 public class ConsultaCuenta extends SeleniumBase {
 	private final By rbtApellidoNombre = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCuenta1_optApellido']");
@@ -25,6 +28,8 @@ public class ConsultaCuenta extends SeleniumBase {
 	private final By rbtNumeroCUIT = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCuenta1_optCUIT']");
 	private final By fldNumeroCUIT = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCuenta1_txtCUIT_text']");
 	private final By btnBuscar = By.xpath("//input[@value='Buscar']");
+	private final By txtNotResult = By.xpath("//tr[@class='rgNoRecords']");
+	private final By filaResultado = By.xpath("//table[contains(@id,'ctl00_ContentFiltros')]//tr[contains(@class,'rgRow') or contains(@class,'rgAltRow')]");
 
 	/**
 	 * Constructor que inicializa el driver de Selenium.
@@ -133,6 +138,29 @@ public class ConsultaCuenta extends SeleniumBase {
 	}
 
 	public void clickBuscar() {
-		clickear(btnBuscar);
+		try {
+			// Paso 1: hacer clic en el botón buscar
+			clickear(btnBuscar);
+
+			// Paso 2: esperar que aparezca o un resultado o el mensaje de "no records"
+			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+			Boolean hayResultados = wait.until(driver -> {
+				if (driver.findElements(txtNotResult).size() > 0) {
+					return false; // apareció el mensaje de "no records"
+				}
+				if (driver.findElements(filaResultado).size() > 1) {
+					return true; // apareció al menos un resultado
+				}
+				return null; // seguir esperando
+			});
+
+			if (Boolean.FALSE.equals(hayResultados)) {
+				throw new RuntimeException("No se encontraron resultados en la búsqueda.");
+			}
+
+			System.out.println("Búsqueda ejecutada con resultados.");
+		} catch (Exception e) {
+			System.err.println("Error en búsqueda: " + e.getMessage());
+		}
 	}
 }
