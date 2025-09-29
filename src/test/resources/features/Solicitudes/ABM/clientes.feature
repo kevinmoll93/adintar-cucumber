@@ -1,5 +1,5 @@
-@Abm
-Feature: Casos de prueba: Solicitudes-ABM
+@abm @clientes
+Feature: Casos de prueba: Solicitudes-ABM-clientes
 
   Scenario Outline: Filtro y busqueda por apellido y nombre
     Given el usuario accede al ABM Clientes

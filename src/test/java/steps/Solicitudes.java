@@ -1,5 +1,7 @@
 package steps;
 
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -9,6 +11,18 @@ import page.SolicitudesPage;
 public class Solicitudes {
     WebDriver driver = Hooks.getDriver();
     SolicitudesPage solicitudes = new SolicitudesPage(driver);
+
+    private Scenario scenario;
+
+    @Before
+    public void setScenario(Scenario scenario) {
+        this.scenario = scenario;
+    }
+
+    @When("El usuario selecciona el estado: {string}.")
+    public void selectState(String state) {
+        solicitudes.selectStateLabel(state);
+    }
 
     @When("Selecciona el filtro por Apellido y Nombre.")
     public void selectFilterByLastNameAndFirstName() {
@@ -62,8 +76,57 @@ public class Solicitudes {
         solicitudes.selectTypeAndKeyNumber(tipo);
     }
 
+    @When("El usuario selecciona el campo \"Nro de cuenta\" e ingresa: {string}.")
+    public void selectAccountNumber(String clickAccountNumber) {
+        solicitudes.clickAccountNumberAndType(clickAccountNumber);
+    }
+
+    @When("El usuario selecciona el campo \"Rango solicitudes\" e ingresa: desde {string} y hasta {string}.")
+    public void selectRangeOfRequest(String from, String to) {
+        solicitudes.clickRangeOfRequestAndType(from, to);
+    }
+
+    @When("El usuario selecciona el campo \"Nro de solicitud\" e ingresa: {string}.")
+    public void selectRequestNumber(String requestNumber) {
+        solicitudes.clickRequestNumberAndType(requestNumber);
+    }
+
+    @When("El usuario selecciona el campo \"Fecha estado\" e ingresa: {string}.")
+    public void selectStatusDateAndType(String statusDate) {
+        solicitudes.selectStatusDateAndType(statusDate);
+    }
+
+    @When("El usuario selecciona el campo \"Sector de alta\" e ingresa: {string}.")
+    public void selectRegistrationSectionAndType(String registrationSection) {
+        solicitudes.selectRegistrationSectionAndType(registrationSection);
+    }
+
+    @When("El usuario selecciona en el campo \"Tipo y nro de documento\" {string} e ingresa: {string}.")
+    public void selectDocumentTypeAndDocumentNumberAndType(String type, String number) {
+        solicitudes.selectDocumentTypeAndDocumentNumberAndType(type, number);
+    }
+
+    @When("El usuario selecciona el campo \"Apellido y nombre\" e ingresa: {string}.")
+    public void selectFullNameAndType(String fullName) {
+        solicitudes.selectFullNameAndType(fullName);
+    }
+
+
     @And("Ingresa la clave {string}.")
     public void enterKeyNumber(String keyNumber) {
         solicitudes.enterKeyNumber(keyNumber);
+    }
+
+    @And("Se hace click en el botón buscar.")
+    public void clickOnButtonInIndividualRequest() {
+        solicitudes.searchButtonInIndividualRequest();
+    }
+
+    @Then("Se obtiene el o los resultados de la busqueda.")
+    public void resultSearchInIndividualRequest() {
+        String searchState = solicitudes.searchState();
+
+        scenario.log("Resultado de la búsqueda: " + searchState);
+        System.out.println("Resultado de la búsqueda: " + searchState);
     }
 }
