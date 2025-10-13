@@ -35,52 +35,24 @@ public class SolicitudesPage extends SeleniumBase {
     private final By statusDateInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_CalendarFEstado_dateInput_text']");
     private final By registrationSectionInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqSectorAlta_Input']");
     private final By typeDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqCodTipDoc_Input']");
+    private final By holderTypeDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqCodTipDoc_Tit_Input']");
+    private final By additionalTypeDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqCodTipDoc_Adic_Input']");
     private final By numberDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_txtNrodDoc_text']");
+    private final By holderNumberDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_txtNrodDoc_TIT_text']");
+    private final By additionalNumberDocumentInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_txtNrodDoc_ADIC_text']");
     private final By fullNameInputInIndividualRequestPage = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_txtBusqApellidoNombre_text']");
+    private final By bankBranchInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqSucBco_Input']");
+    private final By generateReportBtn = By.xpath("//input[@id='ctl00_cmdGenerar']");
+    private final By formatTypePdfBtn = By.xpath("//input[@id='ctl00_optPDF']");
+    private final By formatTypeExcelBtn = By.xpath("//input[@id='ctl00_optExcel']");
 
 
     public SolicitudesPage(WebDriver driver) {
         super(driver);
     }
 
+
     public String searchState() {
-
-//        // Caso 1: No encontró resultados
-////            WebElement noRecords = wait.until(ExpectedConditions.presenceOfElementLocated(
-////                    By.xpath("//*[contains(text(),'No records to display.')]")));
-//        WebElement noRecords = esperarElemento(By.xpath("//*[contains(text(),'No records to display.')]"));
-//        if (noRecords.isDisplayed()) {
-//            System.out.println("No se encontraron resultados.");
-//            //return EstadoBusqueda.SIN_RESULTADOS;
-//            return "No se encontraron resultados.";
-//        }
-//
-//        // Caso 2: Exactamente un resultado
-////            WebElement unicoRegistro = wait.until(ExpectedConditions.presenceOfElementLocated(
-////                    By.id("ctl00_lblFormulario_text")));
-//        WebElement unicoRegistro = esperarElemento(By.id("ctl00_lblFormulario_text"));
-//        if (unicoRegistro.isDisplayed() && unicoRegistro.getText().contains("Registro Seleccionado")) {
-//            System.out.println("Se encontró 1 solo resultado.");
-//            //return EstadoBusqueda.UNO;
-//            return "Se encontró 1 solo resultado.";
-//        }
-//
-////        try {
-////            // Caso 3: Múltiples resultados
-////            WebElement tabla = wait.until(ExpectedConditions.presenceOfElementLocated(
-////                    By.id("ctl00_ContentFiltros_BusquedaSolicitud1_grdSolicitudes_ctl00")));
-////            List<WebElement> filas = tabla.findElements(By.xpath(".//tbody/tr[not(contains(@class,'rgNoRecords'))]"));
-////            if (!filas.isEmpty()) {
-////                System.out.println("Se encontraron múltiples resultados: " + filas.size() + " filas.");
-////                return EstadoBusqueda.MULTIPLES;
-////            }
-////        } catch (TimeoutException e) {
-////            // no apareció la tabla
-////        }
-////        return EstadoBusqueda.DESCONOCIDO;
-//        return "Estado desconocido. Revisar caso de prueba.";
-
-
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         // Esperamos a que aparezca al menos uno de los posibles elementos
         wait.until(ExpectedConditions.or(
@@ -116,12 +88,49 @@ public class SolicitudesPage extends SeleniumBase {
         return "No se pudo determinar el estado de la búsqueda.";
     }
 
+    public String searchStateClients() {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // Esperamos a que aparezca al menos uno de los posibles elementos
+        wait.until(ExpectedConditions.or(
+                ExpectedConditions.presenceOfElementLocated(By.xpath("//*[text()='No records to display.']")),      // sin resultados
+                ExpectedConditions.presenceOfElementLocated(By.id("ctl00_lblFormulario")),          //1 resultado
+                ExpectedConditions.presenceOfElementLocated(By.xpath("//table[@id='ctl00_ContentFiltros_BusquedaCliente1_grdClientes_ctl00']"))     //más de 1 resultado
+        ));
+
+        // Caso 1: sin registros
+        List<WebElement> sinRegistros = driver.findElements(By.xpath("//*[text()='No records to display.']"));
+        if (!sinRegistros.isEmpty()) {
+            return "No se encontraron resultados.";
+        }
+
+        // Caso 2: un único resultado
+        List<WebElement> unicoResultado = driver.findElements(By.id("ctl00_lblFormulario"));
+        if (!unicoResultado.isEmpty() && unicoResultado.get(0).getAttribute("value").contains("Registro Seleccionado para Consultar o Modificar")) {
+            return "Se encontró 1 solo resultado.";
+        }
+
+
+        // Caso 3: múltiples resultados
+        List<WebElement> filas = driver.findElements(
+                By.xpath("//table[@id='ctl00_ContentFiltros_BusquedaCliente1_grdClientes_ctl00']/tbody/tr[not(contains(@class,'rgNoRecords'))]")
+        );
+        if (!filas.isEmpty()) {
+            System.out.println("Se encontraron múltiples resultados: " + filas.size());
+            return "Se encontraron múltiples resultados";
+        }
+
+        return "No se pudo determinar el estado de la búsqueda.";
+    }
+
     public void clickLabel(By locator) {
         cambiarFocoNuevaPestania();
         existe(locator);
         clickear(locator);
     }
 
+    public void switchToNewTab() {
+        cambiarFocoNuevaPestania();
+    }
 
     public void clickLastNameAndFirstNameLabel() {
         clickLabel(fullNameIdLabel);
@@ -177,11 +186,33 @@ public class SolicitudesPage extends SeleniumBase {
         escribir(numberDocumentInput, number);
     }
 
+    public void selectDocumentHolderTypeAndDocumentNumberAndType(String type, String number) {
+        switchWindowAndWaitForElement(holderTypeDocumentInput);
+        clickear(holderTypeDocumentInput);
+        String documentTypeListItemXpath = "//div[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqCodTipDoc_Tit_DropDown']//ul[@class='rcbList']/li[contains(text(), '%s')]";
+        seleccionarOpcionConTexto(documentTypeListItemXpath, type);
+
+        escribir(holderNumberDocumentInput, number);
+    }
+
+    public void selectDocumentAdditionalTypeAndDocumentNumberAndType(String type, String number) {
+        switchWindowAndWaitForElement(additionalTypeDocumentInput);
+        clickear(additionalTypeDocumentInput);
+        String documentTypeListItemXpath = "//div[@id='ctl00_ContentFiltros_BusquedaSolicitud1_cboBusqCodTipDoc_Adic_DropDown']//ul[@class='rcbList']/li[contains(text(), '%s')]";
+        seleccionarOpcionConTexto(documentTypeListItemXpath, type);
+
+        escribir(additionalNumberDocumentInput, number);
+    }
+
     public void selectFullNameAndType(String fullName) {
         switchWindowAndWaitForElement(fullNameInputInIndividualRequestPage);
         escribir(fullNameInputInIndividualRequestPage, fullName);
     }
 
+    public void selectBankBranch(String fullName) {
+        switchWindowAndWaitForElement(bankBranchInput);
+        escribir(bankBranchInput, fullName);
+    }
 
     public void selectStateLabel(String stateString) {
         clickLabel(stateLabel);
@@ -247,5 +278,49 @@ public class SolicitudesPage extends SeleniumBase {
         //div[@id='ctl00_ContentFiltros_BusquedaCuenta1_cboBusqTipoClave_DropDown']//ul[@class='rcbList']//li[contains(text(),'4  - CUIC')]
         //ctl00_ContentFiltros_BusquedaCliente1_cboBusqTipoClave_DropDown
         seleccionarOpcionConTexto(lstTypeAndKeyNumber, typeAndKeyNumber);
+    }
+
+    public void clickGenerateReport() {
+        clickear(generateReportBtn);
+    }
+
+    public void clickBotonAbrirDentroIframe() {
+        try {
+            // Cambiar al iframe
+            driver.switchTo().frame("ctl00_framePDF");
+
+            // Ahora sí buscar y hacer click
+            WebElement botonAbrir = driver.findElement(By.id("open-button"));
+            botonAbrir.click();
+
+            System.out.println("Botón 'Abrir' clickeado correctamente dentro del iframe.");
+
+            // Volver al contenido principal
+            driver.switchTo().defaultContent();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error al hacer click en 'Abrir': " + e.getMessage());
+        }
+    }
+
+    public void saveReportFile(String fileType, String fileName) {
+        if (fileType.equalsIgnoreCase("pdf")) {
+            descargarArchivoNoSeguro(720, "C:\\Temp", ".pdf");
+            renombrarArchivo(fileName, "C:\\Temp", ".pdf", 50);
+        } else if (fileType.equalsIgnoreCase("excel")) {
+            descargarArchivoNoSeguro(720, "C:\\Temp", ".xls");
+            renombrarArchivo(fileName, "C:\\Temp", ".xls", 50);
+        }
+    }
+
+    public void selectFormatType(String formatType) {
+        if (formatType.equalsIgnoreCase("pdf")) {
+            clickear(formatTypePdfBtn);
+        } else if (formatType.equalsIgnoreCase("excel")) {
+            clickear(formatTypeExcelBtn);
+        } else {
+            throw new AssertionError("Tipo de formato de archivo inválido. Sólo se permite 'pdf' o 'excel'.");
+        }
     }
 }
