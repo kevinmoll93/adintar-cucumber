@@ -64,7 +64,7 @@ Feature: Casos de prueba: Solicitudes-ABM-Solicitudes individuales
 
 
   @filtro_busqueda
-  Scenario Outline: Filtro y busqueda poniendo usando el campo "estado"
+  Scenario Outline: Filtro y busqueda poniendo usando el campo "Sector de alta"
     Given el usuario accede al ABM Solicitudes Individuales
     When El usuario selecciona el campo "Sector de alta" e ingresa: "<registration_section>".
     And Se hace click en el botón buscar.

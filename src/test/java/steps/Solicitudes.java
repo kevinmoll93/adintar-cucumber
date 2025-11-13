@@ -14,6 +14,11 @@ public class Solicitudes {
 
     private Scenario scenario;
 
+    @And("Se abre una pestaña nueva.")
+    public void switchToNewTab() {
+        solicitudes.switchToNewTab();
+    }
+
     @Before
     public void setScenario(Scenario scenario) {
         this.scenario = scenario;
@@ -48,6 +53,17 @@ public class Solicitudes {
     public void clickSearchButton() {
         solicitudes.clickSearchButton();
     }
+
+    @And("Selecciona el formato {string}")
+    public void selectFormatType(String formatType) {
+        solicitudes.selectFormatType(formatType);
+    }
+
+    @And("Seleciona la administradora: {string}.")
+    public void selectAdministrator(String administrator) {
+        solicitudes.selectAdministrator(administrator);
+    }
+
 
     @Then("Se muestra la tabla de resultado de la búsqueda.")
     public void isSearchResultsTableDisplayed() {
@@ -106,9 +122,45 @@ public class Solicitudes {
         solicitudes.selectDocumentTypeAndDocumentNumberAndType(type, number);
     }
 
+    @When("El usuario selecciona en el campo \"Tipo y nro de documento titular\" {string} e ingresa: {string}.")
+    public void selectDocumentHolderTypeAndDocumentNumberAndType(String type, String number) {
+        solicitudes.selectDocumentHolderTypeAndDocumentNumberAndType(type, number);
+    }
+
+    @When("El usuario selecciona en el campo \"Tipo y nro de documento adicional\" {string} e ingresa: {string}.")
+    public void selectDocumentAdditionalTypeAndDocumentNumberAndType(String type, String number) {
+        solicitudes.selectDocumentAdditionalTypeAndDocumentNumberAndType(type, number);
+    }
+
     @When("El usuario selecciona el campo \"Apellido y nombre\" e ingresa: {string}.")
     public void selectFullNameAndType(String fullName) {
         solicitudes.selectFullNameAndType(fullName);
+    }
+
+    @When("El usuario selecciona el campo \"Sucursal bancaria\" e ingresa: {string}.")
+    public void selectBankBranch(String fullName) {
+        solicitudes.selectBankBranch(fullName);
+    }
+
+    @When("Se ingresa el número de solicitud: {string}.")
+    public void setRequestNumber(String requestNumber) {
+        solicitudes.setRequestNumber(requestNumber);
+    }
+
+    @When("Click en el checkbox \"solicitud entregada\"")
+    public void checkRequestDelivered() {
+        solicitudes.checkRequestDelivered();
+    }
+
+    @When("Se ingresa la fecha de alta desde: {string}.")
+    public void setRegistrationDateFrom(String date) {
+        solicitudes.setRegistrationDateFrom(date);
+    }
+
+
+    @When("Se ingresa la fecha de alta hasta: {string}.")
+    public void setRegistrationDateTo(String date) {
+        solicitudes.setRegistrationDateTo(date);
     }
 
 
@@ -128,5 +180,24 @@ public class Solicitudes {
 
         scenario.log("Resultado de la búsqueda: " + searchState);
         System.out.println("Resultado de la búsqueda: " + searchState);
+    }
+
+    @Then("Se obtiene el o los resultados de la busqueda de la tabla de Clientes.")
+    public void resultSearchClientTable() {
+        String searchState = solicitudes.searchStateClients();
+
+        scenario.log("Resultado de la búsqueda: " + searchState);
+        System.out.println("Resultado de la búsqueda: " + searchState);
+    }
+
+    @Then("Genera el reporte de formato {string} con nombre {string}.")
+    public void generaYGuardaElReportePDFDeManeraExitosa(String formatType, String fileName) {
+        solicitudes.clickGenerateReport();
+        if (formatType.equalsIgnoreCase("pdf")) {
+            solicitudes.clickBotonAbrirDentroIframe();
+            solicitudes.saveReportFile(formatType, fileName);
+        } else if (formatType.equalsIgnoreCase("excel")) {
+            solicitudes.saveReportFile(formatType, fileName);
+        }
     }
 }

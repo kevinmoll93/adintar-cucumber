@@ -13,8 +13,12 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "steps")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "json:target/cucumber-reports/cucumber.json, pretty, html:target/cucumber-reports/report.html, com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:, listeners.CustomReportListener")
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME,
-        //value = "@abm and @clientes")
-        value = "@abm and @solicitudes_individuales and @test")
+        //value = "@abm and @clientes and @test")
+//value = "@abm and @solicitudes_adicionales and @test")
+//value = "@abm and @solicitudes_individuales and @test")
+        //value = "@listados and @listado_de_rechazos_de_altas_por_servicios and @test")
+        value = "@EntregaAdicionalesDadasDeAltaPorCallCenter and @test")
+
 
 public class RunSolicitudes {
 }
