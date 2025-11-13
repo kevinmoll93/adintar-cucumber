@@ -16,7 +16,7 @@ public class SolicitudesPage extends SeleniumBase {
     private final By fullNameIdLabel = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCliente1_optApellido']");
     private final By fullNameInput = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCliente1_txtBusqApellidoNombre_text']");
     private final By cuitCuilLabel = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCliente1_optCuit']");
-    private final By searchButton = By.xpath("//input[@value='Buscar']");
+
     private final By searchResultTable = By.xpath("//div[@id='ctl00_ContentFiltros_BusquedaCliente1_grdClientes']");
     private final By documentTypeNumberLabel = By.xpath("//a[@id='ctl00_ContentFiltros_BusquedaCliente1_optDocumento']");
     private final By documentTypeNumberSelect = By.xpath("//input[@id='ctl00_ContentFiltros_BusquedaCliente1_cboBusqTipoDoc_Input']");
@@ -47,6 +47,19 @@ public class SolicitudesPage extends SeleniumBase {
     private final By formatTypeExcelBtn = By.xpath("//input[@id='ctl00_optExcel']");
 
 
+    //common elements
+    private final By searchButton = By.xpath("//input[@value='Buscar']");
+
+    //solicitudes-tareas-Entrega de Adicionales dadas de alta por Call Center
+    private final By requestNumberInputPath = By.xpath("//input[@id='ctl00_ContentFiltros_txtNroSol_text']");
+    private final By noRecordsMessage = By.xpath("//table[@id='ctl00_ContentFormulario_grdSolicitudesNue_ctl00']//div[contains(text(), 'No se encontraron registros para mostrar')]");
+    private final By rowsInTable = By.xpath("//table[@id='ctl00_ContentFormulario_grdSolicitudesNue_ctl00']//tr[contains(@class, 'rgRow')]");
+    private final By requestDeliveredCheckbox = By.xpath("//a[@id='ctl00_ContentFiltros_chkSolEntregada']");
+    private final By registrationDateFromInput = By.xpath("//input[@id='ctl00_ContentFiltros_dtFechaAltaD_dateInput_text']");
+    private final By registrationDateToInput = By.xpath("//input[@id='ctl00_ContentFiltros_dtFechaAltaH_dateInput_text']");
+    private final By administratorInput = By.xpath("//input[@id='ctl00_ContentFiltros_cboAdministradora_Input']");
+    String administrationPath = "//ul[@class='rcbList']/li[contains(text(),'%s')]";
+
     public SolicitudesPage(WebDriver driver) {
         super(driver);
     }
@@ -63,7 +76,8 @@ public class SolicitudesPage extends SeleniumBase {
 
         // Caso 1: sin registros
         List<WebElement> sinRegistros = driver.findElements(By.xpath("//*[text()='No records to display.']"));
-        if (!sinRegistros.isEmpty()) {
+        List<WebElement> rows = driver.findElements(rowsInTable);
+        if (!sinRegistros.isEmpty() || !driver.findElements(noRecordsMessage).isEmpty()) {
             return "No se encontraron resultados.";
         }
 
@@ -71,7 +85,7 @@ public class SolicitudesPage extends SeleniumBase {
         List<WebElement> unicoResultado = driver.findElements(By.id("ctl00_lblFormulario"));
         //String text = unicoResultado.get(0).getAttribute("value");
         //Boolean result = unicoResultado.get(0).getAttribute("value").contains("Registro Seleccionado para Consultar o Modificar");
-        if (!unicoResultado.isEmpty() && unicoResultado.get(0).getAttribute("value").contains("Registro Seleccionado para Consultar o Modificar")) {
+        if (!unicoResultado.isEmpty() && (unicoResultado.get(0).getAttribute("value").contains("Registro Seleccionado para Consultar o Modificar") || rows.size() == 1)) {
             return "Se encontró 1 solo resultado.";
         }
 
@@ -80,7 +94,7 @@ public class SolicitudesPage extends SeleniumBase {
         List<WebElement> filas = driver.findElements(
                 By.xpath("//table[@id='ctl00_ContentFiltros_BusquedaSolicitud1_grdSolicitudes_ctl00']/tbody/tr[not(contains(@class,'rgNoRecords'))]")
         );
-        if (!filas.isEmpty()) {
+        if (!filas.isEmpty() || rows.size() > 1) {
             System.out.println("Se encontraron múltiples resultados: " + filas.size());
             return "Se encontraron múltiples resultados";
         }
@@ -323,4 +337,37 @@ public class SolicitudesPage extends SeleniumBase {
             throw new AssertionError("Tipo de formato de archivo inválido. Sólo se permite 'pdf' o 'excel'.");
         }
     }
+
+
+    public void selectAdministrator(String administrator) {
+        clickear(administratorInput);
+        if (
+                administrator.equalsIgnoreCase("01-MASTERCARD")
+                        || administrator.equalsIgnoreCase("02-CABAL")
+                        || administrator.equalsIgnoreCase("03-VISA")
+        ) {
+            seleccionarOpcionConTexto(administrationPath, administrator);
+        } else {
+            throw new AssertionError("Administrador inválido.");
+        }
+    }
+
+
+    public void setRequestNumber(String requestNumber) {
+        escribir(requestNumberInputPath, requestNumber);
+    }
+
+    public void checkRequestDelivered() {
+        clickear(requestDeliveredCheckbox);
+    }
+
+    public void setRegistrationDateFrom(String date) {
+        escribir(registrationDateFromInput, date);
+    }
+
+    public void setRegistrationDateTo(String date) {
+        escribir(registrationDateToInput, date);
+    }
+
+
 }

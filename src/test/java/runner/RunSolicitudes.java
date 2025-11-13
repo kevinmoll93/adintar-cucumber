@@ -16,7 +16,8 @@ import static io.cucumber.junit.platform.engine.Constants.*;
         //value = "@abm and @clientes and @test")
 //value = "@abm and @solicitudes_adicionales and @test")
 //value = "@abm and @solicitudes_individuales and @test")
-        value = "@listados and @listado_de_rechazos_de_altas_por_servicios and @test")
+        //value = "@listados and @listado_de_rechazos_de_altas_por_servicios and @test")
+        value = "@EntregaAdicionalesDadasDeAltaPorCallCenter and @test")
 
 
 public class RunSolicitudes {

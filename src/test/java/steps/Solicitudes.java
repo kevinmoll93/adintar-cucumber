@@ -59,6 +59,12 @@ public class Solicitudes {
         solicitudes.selectFormatType(formatType);
     }
 
+    @And("Seleciona la administradora: {string}.")
+    public void selectAdministrator(String administrator) {
+        solicitudes.selectAdministrator(administrator);
+    }
+
+
     @Then("Se muestra la tabla de resultado de la búsqueda.")
     public void isSearchResultsTableDisplayed() {
         solicitudes.isSearchResultsTableDisplayed();
@@ -135,6 +141,28 @@ public class Solicitudes {
     public void selectBankBranch(String fullName) {
         solicitudes.selectBankBranch(fullName);
     }
+
+    @When("Se ingresa el número de solicitud: {string}.")
+    public void setRequestNumber(String requestNumber) {
+        solicitudes.setRequestNumber(requestNumber);
+    }
+
+    @When("Click en el checkbox \"solicitud entregada\"")
+    public void checkRequestDelivered() {
+        solicitudes.checkRequestDelivered();
+    }
+
+    @When("Se ingresa la fecha de alta desde: {string}.")
+    public void setRegistrationDateFrom(String date) {
+        solicitudes.setRegistrationDateFrom(date);
+    }
+
+
+    @When("Se ingresa la fecha de alta hasta: {string}.")
+    public void setRegistrationDateTo(String date) {
+        solicitudes.setRegistrationDateTo(date);
+    }
+
 
     @And("Ingresa la clave {string}.")
     public void enterKeyNumber(String keyNumber) {
